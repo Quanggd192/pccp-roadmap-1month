@@ -781,8 +781,7 @@
 
     .day-intro {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(260px, 0.62fr);
-      gap: 24px;
+      grid-template-columns: 1fr;
       padding: 22px 0;
     }
 
@@ -810,12 +809,75 @@
       font-size: 13px;
     }
 
-    .code-tip {
-      overflow-x: auto;
-      padding: 14px 16px;
+    .sample-section {
+      margin-bottom: 16px;
+    }
+
+    .sample-section > .mini-label {
+      margin-bottom: 9px;
+    }
+
+    .sample-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .code-sample {
       border: 1px solid var(--line);
       border-radius: 10px;
+      background: var(--surface-2);
+    }
+
+    .code-sample[open] {
+      grid-column: 1 / -1;
+      border-color: rgba(87, 166, 230, 0.34);
       background: #0c1218;
+    }
+
+    .code-sample summary {
+      display: flex;
+      min-height: 44px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 13px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      list-style: none;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    .code-sample summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .code-sample summary::after {
+      content: "EXPAND +";
+      flex: 0 0 auto;
+      color: var(--blue);
+      font-size: 8px;
+      letter-spacing: 0.05em;
+    }
+
+    .code-sample[open] summary {
+      border-bottom: 1px solid var(--line);
+    }
+
+    .code-sample[open] summary::after {
+      content: "CLOSE −";
+    }
+
+    .code-sample pre {
+      overflow-x: auto;
+      margin: 0;
+      padding: 15px 16px 17px;
+    }
+
+    .code-sample code {
       color: #bfd5e8;
       font-family: var(--mono);
       font-size: 11px;
@@ -1267,6 +1329,10 @@
         gap: 10px;
       }
 
+      .sample-list {
+        grid-template-columns: 1fr;
+      }
+
       .mock-panel,
       .form-row {
         grid-template-columns: 1fr 1fr;
@@ -1572,6 +1638,24 @@
         topic: "dict · set · Counter · O(1) lookup",
         recognition: "Thấy “đếm”, “duplicate”, “mapping” hoặc “lookup nhanh” → nghĩ tới dict / set trước khi nghĩ nested loop.",
         code: "from collections import Counter, defaultdict\n\nfreq = Counter(nums)\nseen = set()\ngroups = defaultdict(list)",
+        samples: [
+          {
+            title: "Frequency counting · Counter",
+            code: "from collections import Counter\n\nfreq = Counter(nums)\nfor value, count in freq.items():\n    print(value, count)"
+          },
+          {
+            title: "Duplicate lookup · set",
+            code: "def has_duplicate(nums):\n    seen = set()\n    for value in nums:\n        if value in seen:\n            return True\n        seen.add(value)\n    return False"
+          },
+          {
+            title: "Grouping · defaultdict",
+            code: "from collections import defaultdict\n\ndef group_anagrams(words):\n    groups = defaultdict(list)\n    for word in words:\n        key = tuple(sorted(word))\n        groups[key].append(word)\n    return list(groups.values())"
+          },
+          {
+            title: "Lookup complement · Two Sum",
+            code: "def two_sum(nums, target):\n    position = {}\n    for index, value in enumerate(nums):\n        need = target - value\n        if need in position:\n            return [position[need], index]\n        position[value] = index\n    return []"
+          }
+        ],
         theory: [
           "Ôn dict: get(), in, items() và lookup O(1) trung bình",
           "Ôn set: add(), remove/discard() và loại duplicate",
@@ -1592,6 +1676,24 @@
         topic: "multi-key mapping · signature encoding",
         recognition: "Mục tiêu hôm nay là biến cấu trúc so sánh phức tạp thành một key ổn định rồi dùng map để gom nhóm hoặc lookup.",
         code: "from collections import Counter\n\ndef signature(word):\n    return tuple(sorted(Counter(word).items()))",
+        samples: [
+          {
+            title: "Immutable frequency signature",
+            code: "from collections import Counter\n\ndef signature(word):\n    return tuple(sorted(Counter(word).items()))"
+          },
+          {
+            title: "Bidirectional mapping",
+            code: "def is_isomorphic(source, target):\n    forward, backward = {}, {}\n    for left, right in zip(source, target):\n        if forward.get(left, right) != right:\n            return False\n        if backward.get(right, left) != left:\n            return False\n        forward[left] = right\n        backward[right] = left\n    return True"
+          },
+          {
+            title: "Longest consecutive sequence",
+            code: "def longest_consecutive(nums):\n    values = set(nums)\n    best = 0\n    for start in values:\n        if start - 1 in values:\n            continue\n        length = 1\n        while start + length in values:\n            length += 1\n        best = max(best, length)\n    return best"
+          },
+          {
+            title: "Top-K frequency",
+            code: "from collections import Counter\n\ndef top_k_frequent(nums, k):\n    frequency = Counter(nums)\n    return [value for value, _ in frequency.most_common(k)]"
+          }
+        ],
         theory: [
           "Biến frequency map thành signature có thể hash",
           "Dùng hai map khi cần kiểm tra mapping hai chiều",
@@ -1612,6 +1714,24 @@
         topic: "sorted(key=) · cmp_to_key · multi-criteria",
         recognition: "Trước khi code phần còn lại, hỏi: sort theo thứ tự nào thì bài toán trở nên gần như tuyến tính?",
         code: "from functools import cmp_to_key\n\nitems = sorted(items, key=lambda x: (x[0], -x[1]))\nnums.sort(key=cmp_to_key(compare))",
+        samples: [
+          {
+            title: "Multi-key sorting",
+            code: "# name tăng dần, score giảm dần\nrecords.sort(key=lambda item: (item['name'], -item['score']))"
+          },
+          {
+            title: "Stable sort",
+            code: "# Python sort là stable: thứ tự cũ được giữ khi key bằng nhau\nitems = sorted(items, key=lambda item: item['priority'])"
+          },
+          {
+            title: "Custom comparator · Largest Number",
+            code: "from functools import cmp_to_key\n\ndef compare(a, b):\n    if a + b > b + a:\n        return -1\n    if a + b < b + a:\n        return 1\n    return 0\n\ndef largest_number(nums):\n    values = sorted(map(str, nums), key=cmp_to_key(compare))\n    return ''.join(values).lstrip('0') or '0'"
+          },
+          {
+            title: "Sort then scan · Merge Intervals",
+            code: "def merge(intervals):\n    intervals.sort(key=lambda interval: interval[0])\n    merged = []\n    for start, end in intervals:\n        if not merged or start > merged[-1][1]:\n            merged.append([start, end])\n        else:\n            merged[-1][1] = max(merged[-1][1], end)\n    return merged"
+          }
+        ],
         theory: [
           "Ôn sorted() và list.sort(): khác biệt về giá trị trả về",
           "Viết key nhiều tiêu chí bằng tuple",
@@ -1632,6 +1752,24 @@
         topic: "accumulate · sliding window · expand/shrink",
         recognition: "Tổng đoạn con → thử prefix sum. Đoạn liên tiếp tối ưu dưới điều kiện → thử sliding window. Mảng đã sort → nghĩ two pointers.",
         code: "from itertools import accumulate\n\nprefix = [0] + list(accumulate(nums))\n# sum(nums[l:r]) = prefix[r] - prefix[l]",
+        samples: [
+          {
+            title: "Range sum · Prefix Sum",
+            code: "from itertools import accumulate\n\nprefix = [0] + list(accumulate(nums))\n\ndef range_sum(left, right):\n    return prefix[right + 1] - prefix[left]"
+          },
+          {
+            title: "Prefix Sum + HashMap",
+            code: "def subarray_sum(nums, target):\n    count = 0\n    prefix = 0\n    frequency = {0: 1}\n    for value in nums:\n        prefix += value\n        count += frequency.get(prefix - target, 0)\n        frequency[prefix] = frequency.get(prefix, 0) + 1\n    return count"
+          },
+          {
+            title: "Two pointers · sorted array",
+            code: "def pair_sum(values, target):\n    left, right = 0, len(values) - 1\n    while left < right:\n        total = values[left] + values[right]\n        if total == target:\n            return left, right\n        if total < target:\n            left += 1\n        else:\n            right -= 1\n    return -1, -1"
+          },
+          {
+            title: "Variable sliding window",
+            code: "def min_subarray_len(target, nums):\n    left = 0\n    total = 0\n    answer = len(nums) + 1\n    for right, value in enumerate(nums):\n        total += value\n        while total >= target:\n            answer = min(answer, right - left + 1)\n            total -= nums[left]\n            left += 1\n    return 0 if answer > len(nums) else answer"
+          }
+        ],
         theory: [
           "Dựng prefix sum có phần tử 0 ở đầu để tránh lệch index",
           "Phân biệt sliding window cố định và biến đổi",
@@ -1654,6 +1792,24 @@
         topic: "monotonic stack · collections.deque",
         recognition: "“Phần tử gần nhất lớn/nhỏ hơn” → monotonic stack. Xử lý theo thứ tự đến trước → queue / deque.",
         code: "from collections import deque\n\nqueue = deque()\nstack = []\n\n# O(1) ở hai đầu deque\nqueue.append(x)\nqueue.popleft()",
+        samples: [
+          {
+            title: "Stack · Valid Parentheses",
+            code: "def is_valid(text):\n    pairs = {')': '(', ']': '[', '}': '{'}\n    stack = []\n    for char in text:\n        if char not in pairs:\n            stack.append(char)\n        elif not stack or stack.pop() != pairs[char]:\n            return False\n    return not stack"
+          },
+          {
+            title: "Queue · deque",
+            code: "from collections import deque\n\nqueue = deque([start])\nwhile queue:\n    node = queue.popleft()\n    for neighbor in graph[node]:\n        queue.append(neighbor)"
+          },
+          {
+            title: "Monotonic stack · Daily Temperatures",
+            code: "def daily_temperatures(values):\n    answer = [0] * len(values)\n    stack = []\n    for index, value in enumerate(values):\n        while stack and values[stack[-1]] < value:\n            previous = stack.pop()\n            answer[previous] = index - previous\n        stack.append(index)\n    return answer"
+          },
+          {
+            title: "Min stack",
+            code: "stack = []\nminimums = []\n\ndef push(value):\n    stack.append(value)\n    minimums.append(value if not minimums else min(value, minimums[-1]))\n\ndef pop():\n    minimums.pop()\n    return stack.pop()\n\ndef get_min():\n    return minimums[-1]"
+          }
+        ],
         theory: [
           "Ôn stack bằng list: append() và pop()",
           "Ôn queue bằng deque, không dùng list.pop(0)",
@@ -1675,6 +1831,24 @@
         topic: "bisect · monotonic check(x) · boundary",
         recognition: "Có “giá trị nhỏ nhất/lớn nhất thỏa điều kiện” và check(x) đơn điệu → binary search trên answer.",
         code: "lo, hi = min_answer, max_answer\nwhile lo < hi:\n    mid = (lo + hi) // 2\n    if check(mid):\n        hi = mid\n    else:\n        lo = mid + 1",
+        samples: [
+          {
+            title: "Classic binary search",
+            code: "def binary_search(nums, target):\n    left, right = 0, len(nums) - 1\n    while left <= right:\n        mid = (left + right) // 2\n        if nums[mid] == target:\n            return mid\n        if nums[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return -1"
+          },
+          {
+            title: "Lower bound · bisect_left",
+            code: "from bisect import bisect_left\n\nindex = bisect_left(nums, target)\nfound = index < len(nums) and nums[index] == target"
+          },
+          {
+            title: "Rotated sorted array",
+            code: "def search_rotated(nums, target):\n    left, right = 0, len(nums) - 1\n    while left <= right:\n        mid = (left + right) // 2\n        if nums[mid] == target:\n            return mid\n        if nums[left] <= nums[mid]:\n            if nums[left] <= target < nums[mid]:\n                right = mid - 1\n            else:\n                left = mid + 1\n        elif nums[mid] < target <= nums[right]:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return -1"
+          },
+          {
+            title: "Search on answer · Koko",
+            code: "def min_speed(piles, hours):\n    def feasible(speed):\n        used = sum((pile + speed - 1) // speed for pile in piles)\n        return used <= hours\n\n    left, right = 1, max(piles)\n    while left < right:\n        mid = (left + right) // 2\n        if feasible(mid):\n            right = mid\n        else:\n            left = mid + 1\n    return left"
+          }
+        ],
         theory: [
           "Chọn rõ interval đóng [lo, hi] trước khi code",
           "Ôn bisect_left và bisect_right",
@@ -1696,6 +1870,24 @@
         topic: "full timed mock · no lookup · review",
         recognition: "Thi như thi thật: ưu tiên câu chắc điểm, đặt mốc thời gian bỏ qua và chỉ tối ưu sau khi đã có lời giải đúng.",
         code: "# Trước khi submit\n# 1. Empty / single item\n# 2. Min / max constraint\n# 3. Duplicate values\n# 4. Time & space complexity",
+        samples: [
+          {
+            title: "PCCP solution entry point",
+            code: "def solution(data):\n    answer = 0\n    # 1. Parse / normalize input\n    # 2. Apply selected pattern\n    # 3. Return exact required type\n    return answer"
+          },
+          {
+            title: "Table-driven edge cases",
+            code: "cases = [\n    ([], 0),\n    ([1], 1),\n    ([1, 1, 1], 3),\n]\n\nfor data, expected in cases:\n    assert solution(data) == expected"
+          },
+          {
+            title: "Local runtime measurement",
+            code: "from time import perf_counter\n\nstarted = perf_counter()\nresult = solution(test_input)\nelapsed_ms = (perf_counter() - started) * 1000\nprint(result, f'{elapsed_ms:.2f} ms')"
+          },
+          {
+            title: "Failed-case replay",
+            code: "failed_cases = []\n\ndef verify(data, expected):\n    actual = solution(data)\n    if actual != expected:\n        failed_cases.append({\n            'input': data,\n            'expected': expected,\n            'actual': actual,\n        })"
+          }
+        ],
         theory: [
           "Chốt chiến thuật thứ tự làm bài và mốc thời gian bỏ qua",
           "Chuẩn bị template Python quen tay",
@@ -1891,6 +2083,28 @@
       );
     }
 
+    function renderSamples(dayData) {
+      const samples = Array.isArray(dayData.samples) && dayData.samples.length
+        ? dayData.samples
+        : [{ title: "Python quick reference", code: dayData.code || "" }];
+      let samplesMarkup = "";
+
+      samples.forEach(function(sample) {
+        samplesMarkup +=
+          '<details class="code-sample">' +
+            "<summary>" + escapeHtml(sample.title) + "</summary>" +
+            "<pre><code>" + escapeHtml(sample.code) + "</code></pre>" +
+          "</details>";
+      });
+
+      return (
+        '<section class="sample-section" aria-label="Python sample code">' +
+          '<span class="mini-label">Python samples · ' + samples.length + " patterns</span>" +
+          '<div class="sample-list">' + samplesMarkup + "</div>" +
+        "</section>"
+      );
+    }
+
     function renderMockPanel() {
       return (
         '<div class="mock-panel" aria-label="Kết quả mock test">' +
@@ -1929,8 +2143,8 @@
             '<div class="day-content" id="day-content-' + dayData.day + '"' + (open ? "" : " hidden") + ">" +
               '<div class="day-intro">' +
                 '<div class="recognition"><span class="mini-label">Mục tiêu nhận diện</span><p>' + escapeHtml(dayData.recognition) + "</p></div>" +
-                '<div class="code-tip" aria-label="Python quick reference">' + escapeHtml(dayData.code) + "</div>" +
               "</div>" +
+              renderSamples(dayData) +
               '<div class="task-groups">' +
                 renderTaskGroup(dayData, "theory") +
                 renderTaskGroup(dayData, "practice") +
