@@ -69,6 +69,14 @@
       cursor: pointer;
     }
 
+    button:disabled,
+    input:disabled,
+    select:disabled,
+    textarea:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
     a {
       color: inherit;
       text-decoration: none;
@@ -222,6 +230,22 @@
       margin-bottom: 34px;
     }
 
+    .database-notice {
+      margin: -18px 0 28px;
+      padding: 11px 13px;
+      border: 1px solid rgba(255, 123, 114, 0.28);
+      border-radius: 10px;
+      background: rgba(255, 123, 114, 0.08);
+      color: #efaaa5;
+      font-family: var(--mono);
+      font-size: 10px;
+      line-height: 1.6;
+    }
+
+    .database-notice code {
+      color: var(--yellow);
+    }
+
     .button {
       min-height: 48px;
       display: inline-flex;
@@ -314,6 +338,57 @@
       color: var(--muted);
       font-family: var(--mono);
       font-size: 11px;
+    }
+
+    .terminal-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .database-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .database-status::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--muted-2);
+    }
+
+    .database-status[data-state="synced"] {
+      color: var(--green);
+    }
+
+    .database-status[data-state="synced"]::before {
+      background: var(--green);
+      box-shadow: 0 0 0 3px rgba(89, 209, 139, 0.1);
+    }
+
+    .database-status[data-state="saving"] {
+      color: var(--yellow);
+    }
+
+    .database-status[data-state="saving"]::before {
+      background: var(--yellow);
+    }
+
+    .database-status[data-state="offline"],
+    .database-status[data-state="error"] {
+      color: var(--red);
+    }
+
+    .database-status[data-state="offline"]::before,
+    .database-status[data-state="error"]::before {
+      background: var(--red);
     }
 
     .terminal-dots {
@@ -1417,6 +1492,10 @@
           </button>
           <a class="button button-secondary" href="#roadmap">Xem curriculum</a>
         </div>
+        <div class="database-notice" id="databaseNotice" role="status" hidden>
+          JSON database offline. Chạy <code>node server.js</code> và mở trang qua
+          <code>http://127.0.0.1:8000</code>. Các control lưu tiến độ đang bị khóa.
+        </div>
         <div class="hero-facts" aria-label="Thông tin kế hoạch">
           <div class="fact">
             <strong>7 ngày</strong>
@@ -1436,7 +1515,10 @@
       <aside class="terminal-card" aria-label="Tiến độ tuần 1">
         <div class="terminal-top">
           <div class="terminal-dots" aria-hidden="true"><span></span><span></span><span></span></div>
-          <span>~/pccp/week_01.py</span>
+          <div class="terminal-meta">
+            <span>~/pccp/week_01.py</span>
+            <span class="database-status" id="databaseStatus" data-state="connecting">DB_CONNECTING</span>
+          </div>
         </div>
         <div class="terminal-body">
           <p class="week-label">ACTIVE_WEEK = 1</p>
@@ -1923,8 +2005,12 @@
 
     let state = structuredClone(defaultState);
     let currentFilter = "all";
-    let databaseMode = "local";
+    let databaseMode = "connecting";
     let saveTimer = null;
+    let databaseWriteQueue = Promise.resolve();
+    let databaseWritesPending = 0;
+    let lastDatabaseUpdatedAt = "";
+    let pendingRetrySnapshot = null;
 
     function normalizeState(value) {
       const saved = value && typeof value === "object" ? value : {};
@@ -1946,58 +2032,176 @@
       }
     }
 
-    function saveState() {
+    function saveLocalCache() {
       try {
         localStorage.setItem(storageKey, JSON.stringify(state));
       } catch (error) {
-        console.warn("Không thể lưu bản dự phòng trên trình duyệt.", error);
-      }
-
-      if (databaseMode === "file") {
-        window.clearTimeout(saveTimer);
-        saveTimer = window.setTimeout(syncDatabase, 180);
+        console.warn("Không thể cập nhật local cache.", error);
       }
     }
 
-    async function syncDatabase() {
-      const database = {
-        version: 1,
-        updatedAt: new Date().toISOString(),
-        checklists: { week1: roadmapDays },
-        progress: state
-      };
+    function setPersistenceControlsEnabled(enabled) {
+      const selector = [
+        "#days input",
+        "#days textarea",
+        "#errorForm input",
+        "#errorForm select",
+        "#errorForm textarea",
+        "#errorForm button",
+        "#resetButton",
+        "#errorList .remove-error"
+      ].join(",");
 
+      document.querySelectorAll(selector).forEach(function(control) {
+        control.disabled = !enabled;
+      });
+    }
+
+    function setDatabaseStatus(status, detail) {
+      const labels = {
+        connecting: "DB_CONNECTING",
+        synced: "JSON_SYNCED",
+        saving: "JSON_SAVING",
+        offline: "JSON_OFFLINE",
+        error: "SYNC_ERROR"
+      };
+      const indicator = document.getElementById("databaseStatus");
+      const notice = document.getElementById("databaseNotice");
+
+      indicator.dataset.state = status;
+      indicator.textContent = labels[status] || status.toUpperCase();
+      indicator.title = detail || "";
+      notice.hidden = status !== "offline" && status !== "error";
+
+      if (status === "connecting" || status === "offline" || status === "error") {
+        setPersistenceControlsEnabled(false);
+      } else if (status === "synced" || status === "saving") {
+        setPersistenceControlsEnabled(true);
+      }
+    }
+
+    function saveState(options) {
+      const settings = Object.assign({ database: true, immediate: false }, options || {});
+      saveLocalCache();
+
+      if (!settings.database) return;
+
+      if (databaseMode !== "file") {
+        setDatabaseStatus("offline", "Không thể ghi vào pccp_database.json.");
+        return;
+      }
+
+      window.clearTimeout(saveTimer);
+      saveTimer = null;
+
+      if (settings.immediate) {
+        enqueueDatabaseSync();
+      } else {
+        saveTimer = window.setTimeout(function() {
+          saveTimer = null;
+          enqueueDatabaseSync();
+        }, 250);
+      }
+    }
+
+    function enqueueDatabaseSync() {
+      const progressSnapshot = structuredClone(state);
+      databaseWritesPending += 1;
+      setDatabaseStatus("saving");
+
+      databaseWriteQueue = databaseWriteQueue.then(
+        function() { return syncDatabase(progressSnapshot); },
+        function() { return syncDatabase(progressSnapshot); }
+      );
+      return databaseWriteQueue;
+    }
+
+    async function syncDatabase(progressSnapshot) {
+      let succeeded = false;
       try {
-        const response = await fetch("/api/database", {
+        const response = await fetch("/api/progress", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(database)
+          body: JSON.stringify(progressSnapshot)
         });
         if (!response.ok) throw new Error("Database trả về mã " + response.status);
+        const result = await response.json();
+        lastDatabaseUpdatedAt = result.updatedAt || lastDatabaseUpdatedAt;
+        pendingRetrySnapshot = null;
+        succeeded = true;
       } catch (error) {
-        console.warn("Không thể đồng bộ file JSON; bản local vẫn đã được lưu.", error);
+        pendingRetrySnapshot = structuredClone(progressSnapshot);
+        console.warn("Không thể ghi pccp_database.json.", error);
+      } finally {
+        databaseWritesPending -= 1;
+        if (databaseWritesPending === 0) {
+          setDatabaseStatus(
+            succeeded ? "synced" : "error",
+            succeeded ? "Tiến độ đã ghi vào pccp_database.json." : "Không thể ghi pccp_database.json."
+          );
+        }
       }
+      return succeeded;
     }
 
-    async function initializeApp() {
+    function applyDatabase(database) {
+      if (!database.checklists || !Array.isArray(database.checklists.week1)) {
+        throw new Error("Checklist trong database không hợp lệ.");
+      }
+
+      roadmapDays = database.checklists.week1;
+      state = normalizeState(database.progress);
+      lastDatabaseUpdatedAt = database.updatedAt || "";
+      saveLocalCache();
+      renderDays();
+      renderErrors();
+      updateProgress();
+    }
+
+    async function refreshDatabase(force) {
+      if (databaseWritesPending > 0 || saveTimer !== null) return;
+
       try {
         const response = await fetch("/api/database", { cache: "no-store" });
         if (!response.ok) throw new Error("Database trả về mã " + response.status);
         const database = await response.json();
-        if (!database.checklists || !Array.isArray(database.checklists.week1)) {
-          throw new Error("Checklist trong database không hợp lệ.");
-        }
-        roadmapDays = database.checklists.week1;
-        state = normalizeState(database.progress);
+
         databaseMode = "file";
+        if (pendingRetrySnapshot) {
+          state = normalizeState(pendingRetrySnapshot);
+          pendingRetrySnapshot = null;
+          enqueueDatabaseSync();
+          return;
+        }
+        if (force || (database.updatedAt || "") !== lastDatabaseUpdatedAt) {
+          applyDatabase(database);
+        }
+        setDatabaseStatus("synced", "pccp_database.json là nguồn dữ liệu hiện tại.");
       } catch (error) {
+        const wasConnected = databaseMode === "file";
+        databaseMode = wasConnected ? "file" : "offline";
+        setDatabaseStatus(
+          wasConnected ? "error" : "offline",
+          "Mở trang qua node server.js để bật JSON database."
+        );
+      }
+    }
+
+    async function initializeApp() {
+      setDatabaseStatus("connecting");
+      await refreshDatabase(true);
+
+      if (databaseMode !== "file") {
         state = loadLocalState();
-        databaseMode = "local";
+        renderDays();
+        renderErrors();
+        updateProgress();
+        setPersistenceControlsEnabled(false);
       }
 
-      renderDays();
-      renderErrors();
-      updateProgress();
+      window.setInterval(function() {
+        refreshDatabase(false);
+      }, 3000);
     }
 
     function escapeHtml(value) {
@@ -2208,7 +2412,7 @@
       button.setAttribute("aria-expanded", "true");
       content.hidden = false;
       if (!state.openDays.includes(dayNumber)) state.openDays.push(dayNumber);
-      saveState();
+      saveState({ database: false });
     }
 
     function continueLearning() {
@@ -2292,14 +2496,14 @@
       state.openDays = isOpen
         ? state.openDays.filter(function(day) { return day !== dayNumber; })
         : Array.from(new Set(state.openDays.concat(dayNumber)));
-      saveState();
+      saveState({ database: false });
     });
 
     document.getElementById("days").addEventListener("change", function(event) {
       const checkbox = event.target.closest("[data-task-id]");
       if (!checkbox) return;
       state.checked[checkbox.dataset.taskId] = checkbox.checked;
-      saveState();
+      saveState({ immediate: true });
       updateDayCard(Number(checkbox.dataset.day));
       updateProgress();
       applyFilter();
@@ -2339,7 +2543,7 @@
       };
       if (!entry.problem || !entry.cause || !entry.fix) return;
       state.errors.unshift(entry);
-      saveState();
+      saveState({ immediate: true });
       renderErrors();
       event.currentTarget.reset();
       document.getElementById("problemName").focus();
@@ -2349,7 +2553,7 @@
       const button = event.target.closest("[data-remove-error]");
       if (!button) return;
       state.errors = state.errors.filter(function(entry) { return entry.id !== button.dataset.removeError; });
-      saveState();
+      saveState({ immediate: true });
       renderErrors();
     });
 
@@ -2357,7 +2561,7 @@
       const confirmed = window.confirm("Reset toàn bộ checklist, ghi chú, mock result và error log của Tuần 1?");
       if (!confirmed) return;
       state = structuredClone(defaultState);
-      saveState();
+      saveState({ immediate: true });
       renderDays();
       renderErrors();
       updateProgress();
@@ -2365,6 +2569,26 @@
 
     document.getElementById("continueButton").addEventListener("click", continueLearning);
     document.getElementById("mobileContinue").addEventListener("click", continueLearning);
+
+    window.addEventListener("focus", function() {
+      refreshDatabase(false);
+    });
+
+    document.addEventListener("visibilitychange", function() {
+      if (document.visibilityState === "visible") refreshDatabase(false);
+    });
+
+    window.addEventListener("pagehide", function() {
+      if (databaseMode !== "file" || saveTimer === null) return;
+      window.clearTimeout(saveTimer);
+      saveTimer = null;
+      fetch("/api/progress", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(state),
+        keepalive: true
+      }).catch(function() {});
+    });
 
     initializeApp();
   </script>

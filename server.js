@@ -41,6 +41,21 @@ function validateDatabase(value) {
   );
 }
 
+function validateProgress(value) {
+  return Boolean(
+    value &&
+    typeof value === "object" &&
+    value.checked &&
+    typeof value.checked === "object" &&
+    value.notes &&
+    typeof value.notes === "object" &&
+    Array.isArray(value.errors) &&
+    value.mock &&
+    typeof value.mock === "object" &&
+    Array.isArray(value.openDays)
+  );
+}
+
 function writeDatabase(value) {
   writeQueue = writeQueue
     .catch(function() {})
@@ -50,6 +65,31 @@ function writeDatabase(value) {
       await rename(temporaryDatabasePath, databasePath);
     });
   return writeQueue;
+}
+
+function writeProgress(progress) {
+  let result;
+
+  writeQueue = writeQueue
+    .catch(function() {})
+    .then(async function() {
+      const database = await readDatabase();
+      database.progress = progress;
+      database.updatedAt = new Date().toISOString();
+
+      const serialized = JSON.stringify(database, null, 2) + "\n";
+      await writeFile(temporaryDatabasePath, serialized, "utf8");
+      await rename(temporaryDatabasePath, databasePath);
+
+      result = {
+        ok: true,
+        updatedAt: database.updatedAt
+      };
+    });
+
+  return writeQueue.then(function() {
+    return result;
+  });
 }
 
 function readRequestBody(request) {
@@ -93,6 +133,20 @@ const server = http.createServer(async function(request, response) {
       database.updatedAt = new Date().toISOString();
       await writeDatabase(database);
       sendJson(response, 200, { ok: true, updatedAt: database.updatedAt });
+      return;
+    }
+
+    if (request.method === "PUT" && requestUrl.pathname === "/api/progress") {
+      const body = await readRequestBody(request);
+      const progress = JSON.parse(body);
+
+      if (!validateProgress(progress)) {
+        sendJson(response, 400, { error: "Progress payload is invalid." });
+        return;
+      }
+
+      const result = await writeProgress(progress);
+      sendJson(response, 200, result);
       return;
     }
 
