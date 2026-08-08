@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Roadmap và checklist 30 ngày luyện thi PCCP, mục tiêu 900–1000 điểm.">
+  <meta name="description" content="Roadmap kỹ thuật và checklist luyện thi PCCP bằng Python.">
   <meta name="theme-color" content="#0b0f14">
-  <title>PCCP 1000 — Roadmap 30 ngày</title>
+  <title>PCCP Roadmap — Week 1</title>
   <style>
     :root {
       color-scheme: dark;
@@ -162,8 +162,8 @@
       grid-template-columns: minmax(0, 1.18fr) minmax(340px, 0.82fr);
       gap: 64px;
       align-items: center;
-      min-height: 620px;
-      padding: 72px 0 62px;
+      min-height: 540px;
+      padding: 56px 0 48px;
     }
 
     .eyebrow {
@@ -194,9 +194,9 @@
     h1 {
       max-width: 760px;
       margin-bottom: 22px;
-      font-size: clamp(44px, 6.6vw, 80px);
-      line-height: 0.98;
-      letter-spacing: -0.058em;
+      font-size: clamp(40px, 5.5vw, 64px);
+      line-height: 1.02;
+      letter-spacing: -0.05em;
     }
 
     .highlight {
@@ -1321,9 +1321,9 @@
 <body>
   <header class="site-header">
     <nav class="shell nav" aria-label="Điều hướng chính">
-      <a class="brand" href="#top" aria-label="PCCP 1000 - về đầu trang">
+      <a class="brand" href="#top" aria-label="PCCP Roadmap - về đầu trang">
         <span class="brand-mark">Py</span>
-        <span>PCCP_1000</span>
+        <span>PCCP_ROADMAP</span>
       </a>
       <div class="nav-links">
         <a href="#roadmap">Roadmap</a>
@@ -1339,30 +1339,30 @@
   <main id="top">
     <section class="shell hero" aria-labelledby="hero-title">
       <div>
-        <p class="eyebrow">30-day sprint / Python</p>
-        <h1 id="hero-title">Chạm mốc <span class="highlight">1000</span> bằng một roadmap đủ rõ.</h1>
+        <p class="eyebrow">week_01.py / core patterns</p>
+        <h1 id="hero-title">Tuần 1: Nền tảng thuật toán với Python.</h1>
         <p class="hero-copy">
-          Không học lan man. Mỗi ngày <strong>2–3 giờ</strong>, tập trung vào phản xạ nhận diện pattern,
-          tốc độ triển khai Python và một error log đủ thành thật để không lặp lại lỗi cũ.
+          HashMap/Set, sorting, prefix sum, two pointers, stack/queue và binary search.
+          Mỗi ngày dùng <strong>150 phút</strong> để review pattern, implement và ghi error log.
         </p>
         <div class="hero-actions">
           <button class="button button-primary" id="continueButton" type="button">
-            Bắt đầu ngày hôm nay <span aria-hidden="true">→</span>
+            Mở checklist hiện tại <span aria-hidden="true">→</span>
           </button>
-          <a class="button button-secondary" href="#roadmap">Xem roadmap 4 tuần</a>
+          <a class="button button-secondary" href="#roadmap">Xem curriculum</a>
         </div>
         <div class="hero-facts" aria-label="Thông tin kế hoạch">
           <div class="fact">
-            <strong>30 ngày</strong>
-            <span>một mục tiêu</span>
+            <strong>7 ngày</strong>
+            <span>week_01 duration</span>
           </div>
           <div class="fact">
-            <strong>2.5h/ngày</strong>
-            <span>mốc thời gian chuẩn</span>
+            <strong>150 phút</strong>
+            <span>daily time budget</span>
           </div>
           <div class="fact">
-            <strong>900–1000</strong>
-            <span>target score</span>
+            <strong>71 items</strong>
+            <span>checklist workload</span>
           </div>
         </div>
       </div>
@@ -1373,9 +1373,9 @@
           <span>~/pccp/week_01.py</span>
         </div>
         <div class="terminal-body">
-          <p class="week-label">CURRENT_SPRINT = 01</p>
-          <h2>Xây nền tốc độ</h2>
-          <p class="terminal-description">6 nhóm pattern nền tảng · 1 mock test có bấm giờ</p>
+          <p class="week-label">ACTIVE_WEEK = 1</p>
+          <h2>Core patterns</h2>
+          <p class="terminal-description">6 nhóm thuật toán cơ bản · 1 timed mock</p>
           <div class="progress-overview">
             <div class="progress-ring" id="progressRing" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
               <div class="ring-content">
@@ -1398,42 +1398,42 @@
 
     <section class="shell section" id="roadmap" aria-labelledby="roadmap-title">
       <div class="section-heading">
-        <p class="eyebrow">The full route</p>
-        <h2 id="roadmap-title">Bốn tuần, bốn trạng thái năng lực.</h2>
-        <p>Đi từ nền tảng tốc độ đến nhịp thi thật. Tuần 1 đang được mở chi tiết ở bên dưới.</p>
+        <p class="eyebrow">curriculum / 4 weeks</p>
+        <h2 id="roadmap-title">Roadmap thuật toán.</h2>
+        <p>Tuần 1 có checklist chi tiết. Tuần 2–4 hiện hiển thị phạm vi kiến thức.</p>
       </div>
       <div class="roadmap-grid">
         <article class="roadmap-card active">
-          <div class="roadmap-number"><span>Week 01</span><span class="status-chip">Đang học</span></div>
-          <h3>Xây nền tốc độ</h3>
-          <p>Nhận diện pattern cơ bản và chuyển ý tưởng thành Python gọn, đúng, nhanh.</p>
+          <div class="roadmap-number"><span>Week 01</span><span class="status-chip">ACTIVE</span></div>
+          <h3>Core patterns</h3>
+          <p>Lookup, ordering, range query, linear scan, stack/queue và monotonic predicate.</p>
           <div class="topic-list">
             <span>Array/String</span><span>HashMap/Set</span><span>Sorting</span>
             <span>Prefix Sum</span><span>Stack/Queue</span><span>Binary Search</span>
           </div>
         </article>
         <article class="roadmap-card">
-          <div class="roadmap-number"><span>Week 02</span><span class="status-chip">Tiếp theo</span></div>
-          <h3>Thuật toán ăn điểm</h3>
-          <p>Phủ các dạng thường xuất hiện và tối ưu khả năng lấy trọn điểm câu vừa.</p>
+          <div class="roadmap-number"><span>Week 02</span><span class="status-chip">QUEUED</span></div>
+          <h3>Traversal & strategy</h3>
+          <p>Graph traversal, heap operations, greedy decisions, simulation và state search.</p>
           <div class="topic-list">
             <span>DFS/BFS</span><span>Graph</span><span>Heap</span>
             <span>Greedy</span><span>Simulation</span><span>Backtracking</span>
           </div>
         </article>
         <article class="roadmap-card">
-          <div class="roadmap-number"><span>Week 03</span><span class="status-chip">Sắp mở</span></div>
-          <h3>Chinh phục bài khó</h3>
-          <p>Nâng trần điểm bằng tư duy trạng thái và các cấu trúc đồ thị nâng cao.</p>
+          <div class="roadmap-number"><span>Week 03</span><span class="status-chip">LATER</span></div>
+          <h3>DP & advanced graph</h3>
+          <p>State transition, shortest path, disjoint set và mixed constraints.</p>
           <div class="topic-list">
             <span>DP</span><span>Shortest Path</span><span>Union-Find</span>
             <span>Advanced Graph</span><span>Mixed Problems</span>
           </div>
         </article>
         <article class="roadmap-card">
-          <div class="roadmap-number"><span>Week 04</span><span class="status-chip">Về đích</span></div>
-          <h3>Thi như thi thật</h3>
-          <p>Mock test liên tục, chữa đúng nguyên nhân và giảm thời gian ở từng dạng bài.</p>
+          <div class="roadmap-number"><span>Week 04</span><span class="status-chip">MOCK</span></div>
+          <h3>Timed mock & review</h3>
+          <p>Timed execution, failure classification, reimplementation và runtime optimization.</p>
           <div class="topic-list">
             <span>Timed Mock</span><span>Error Review</span><span>Speed</span>
             <span>Strategy</span><span>Final Polish</span>
@@ -1445,24 +1445,24 @@
     <section class="shell section" aria-labelledby="system-title">
       <div class="system-panel">
         <div class="system-copy">
-          <p class="eyebrow">Daily system</p>
-          <h2 id="system-title">Không học lan man.</h2>
-          <p>Lấy mốc 150 phút mỗi ngày. Lý thuyết đủ dùng, bài tập chiếm phần lớn thời gian và luôn kết thúc bằng error log.</p>
+          <p class="eyebrow">time budget / 150 minutes</p>
+          <h2 id="system-title">Daily allocation.</h2>
+          <p>Mỗi session gồm review API và invariant, implement bài tập có timer, sau đó cập nhật error log.</p>
         </div>
         <div class="ratio-list">
           <div class="ratio-item">
             <span class="ratio-value">20%</span>
-            <div class="ratio-main"><strong>Lý thuyết có mục tiêu</strong><span>Ôn API Python và dấu hiệu nhận diện pattern</span></div>
+            <div class="ratio-main"><strong>Pattern & Python API</strong><span>Review operations, complexity và invariant</span></div>
             <span class="ratio-time">30 phút</span>
           </div>
           <div class="ratio-item">
             <span class="ratio-value">70%</span>
-            <div class="ratio-main"><strong>Giải bài có bấm giờ</strong><span>Tự code trước, chỉ đọc lời giải sau khi đã thử thật</span></div>
+            <div class="ratio-main"><strong>Timed implementation</strong><span>Implement, test edge cases và kiểm tra complexity</span></div>
             <span class="ratio-time">105 phút</span>
           </div>
           <div class="ratio-item">
             <span class="ratio-value">10%</span>
-            <div class="ratio-main"><strong>Ghi error log</strong><span>Viết nguyên nhân và một hành động tránh lặp lỗi</span></div>
+            <div class="ratio-main"><strong>Error classification</strong><span>Ghi root cause, failed assumption và review action</span></div>
             <span class="ratio-time">15 phút</span>
           </div>
         </div>
@@ -1472,9 +1472,9 @@
     <section class="shell section week-section" id="week-1" aria-labelledby="week-title">
       <div class="week-toolbar">
         <div class="section-heading">
-          <p class="eyebrow">Week 01 / checklist</p>
-          <h2 id="week-title">Bảy ngày xây phản xạ.</h2>
-          <p>Đánh dấu từng bước khi hoàn thành. Tiến độ được lưu tự động trên thiết bị này.</p>
+          <p class="eyebrow">week_01 / checklist</p>
+          <h2 id="week-title">Checklist theo ngày.</h2>
+          <p>Theory, implementation và error review được theo dõi độc lập cho từng ngày.</p>
         </div>
         <div class="filters" role="group" aria-label="Lọc ngày học">
           <button class="filter-button active" type="button" data-filter="all">Tất cả</button>
@@ -1491,14 +1491,14 @@
 
     <section class="shell section" id="error-log" aria-labelledby="error-title">
       <div class="section-heading">
-        <p class="eyebrow">Debug your thinking</p>
-        <h2 id="error-title">Error log — nơi điểm số thật sự tăng.</h2>
-        <p>Mỗi lỗi chỉ có giá trị khi anh biết chính xác vì sao nó xảy ra và sẽ làm gì khác đi ở lần sau.</p>
+        <p class="eyebrow">review records</p>
+        <h2 id="error-title">Error log.</h2>
+        <p>Lưu bài, loại lỗi, root cause, correction rule và ngày reimplement.</p>
       </div>
       <div class="error-layout">
         <aside class="error-form-card">
-          <h3>Ghi một lỗi mới</h3>
-          <p>Ngắn, cụ thể và có hành động sửa.</p>
+          <h3>Add error record</h3>
+          <p>Mỗi record cần có root cause và correction rule.</p>
           <form class="error-form" id="errorForm">
             <div class="field">
               <label for="problemName">Bài tập</label>
@@ -1528,7 +1528,7 @@
               <label for="errorFix">Cách tránh lặp lại</label>
               <textarea id="errorFix" name="fix" required placeholder="Lần sau sẽ kiểm tra hoặc nhận diện thế nào?"></textarea>
             </div>
-            <button class="button button-primary" type="submit">Lưu vào error log</button>
+            <button class="button button-primary" type="submit">Lưu record</button>
           </form>
         </aside>
 
@@ -1544,7 +1544,7 @@
           <div class="empty-state" id="errorEmpty">
             <div>
               <strong>Chưa có lỗi nào được ghi.</strong><br>
-              Làm bài trước. Sai thật. Ghi thật. Sửa đúng nguyên nhân.
+              Error records sẽ hiển thị tại đây.
             </div>
           </div>
         </div>
@@ -1553,7 +1553,7 @@
   </main>
 
   <footer class="footer">
-    <div class="shell">7 ngày · 6 pattern nền tảng · 1 mock test · target 900–1000</div>
+    <div class="shell">week_01 · python · 7 days · 71 checklist items</div>
   </footer>
 
   <div class="mobile-dock" aria-live="polite">
@@ -1561,7 +1561,7 @@
       <strong id="mobileProgress">0% Tuần 1</strong>
       <span id="mobileNext">Tiếp theo: Ngày 01</span>
     </div>
-    <button class="button button-primary" id="mobileContinue" type="button">Tiếp tục →</button>
+    <button class="button button-primary" id="mobileContinue" type="button">Mở →</button>
   </div>
 
   <script>
@@ -1895,7 +1895,7 @@
       return (
         '<div class="mock-panel" aria-label="Kết quả mock test">' +
           '<div class="field"><label for="mockScore">Điểm mock</label>' +
-            '<input id="mockScore" data-mock="score" type="number" min="0" max="1000" placeholder="0–1000" value="' + escapeHtml(state.mock.score) + '"></div>' +
+            '<input id="mockScore" data-mock="score" type="number" min="0" max="1000" placeholder="Nhập điểm" value="' + escapeHtml(state.mock.score) + '"></div>' +
           '<div class="field"><label for="mockSolved">Số câu hoàn thành</label>' +
             '<input id="mockSolved" data-mock="solved" type="number" min="0" placeholder="Ví dụ: 3" value="' + escapeHtml(state.mock.solved) + '"></div>' +
           '<div class="field"><label for="mockMinutes">Thời gian</label>' +
