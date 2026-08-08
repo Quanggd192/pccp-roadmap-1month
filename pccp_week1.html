@@ -231,6 +231,10 @@
     }
 
     .database-notice {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
       margin: -18px 0 28px;
       padding: 11px 13px;
       border: 1px solid rgba(255, 123, 114, 0.28);
@@ -240,6 +244,10 @@
       font-family: var(--mono);
       font-size: 10px;
       line-height: 1.6;
+    }
+
+    .database-notice[hidden] {
+      display: none;
     }
 
     .database-notice code {
@@ -1493,8 +1501,9 @@
           <a class="button button-secondary" href="#roadmap">Xem curriculum</a>
         </div>
         <div class="database-notice" id="databaseNotice" role="status" hidden>
-          JSON database offline. Chạy <code>node server.js</code> và mở trang qua
-          <code>http://127.0.0.1:8000</code>. Các control lưu tiến độ đang bị khóa.
+          <span id="databaseNoticeText">
+            Database server offline. Chạy node server.js rồi mở http://127.0.0.1:8000.
+          </span>
         </div>
         <div class="hero-facts" aria-label="Thông tin kế hoạch">
           <div class="fact">
@@ -2062,22 +2071,37 @@
         connecting: "DB_CONNECTING",
         synced: "JSON_SYNCED",
         saving: "JSON_SAVING",
-        offline: "JSON_OFFLINE",
+        offline: "SERVER_OFFLINE",
         error: "SYNC_ERROR"
       };
       const indicator = document.getElementById("databaseStatus");
       const notice = document.getElementById("databaseNotice");
+      const noticeText = document.getElementById("databaseNoticeText");
 
       indicator.dataset.state = status;
       indicator.textContent = labels[status] || status.toUpperCase();
       indicator.title = detail || "";
       notice.hidden = status !== "offline" && status !== "error";
+      noticeText.textContent = status === "error"
+        ? "Lần ghi gần nhất chưa thành công. Checklist vẫn hoạt động và server sẽ tự retry."
+        : "Database server offline. Chạy node server.js rồi mở http://127.0.0.1:8000.";
 
-      if (status === "connecting" || status === "offline" || status === "error") {
+      if (status === "connecting" || status === "offline") {
         setPersistenceControlsEnabled(false);
-      } else if (status === "synced" || status === "saving") {
+      } else if (status === "synced" || status === "saving" || status === "error") {
         setPersistenceControlsEnabled(true);
       }
+    }
+
+    function validateDatabase(database) {
+      return Boolean(
+        database &&
+        database.version === 1 &&
+        database.checklists &&
+        Array.isArray(database.checklists.week1) &&
+        database.progress &&
+        typeof database.progress === "object"
+      );
     }
 
     function saveState(options) {
@@ -2086,8 +2110,8 @@
 
       if (!settings.database) return;
 
-      if (databaseMode !== "file") {
-        setDatabaseStatus("offline", "Không thể ghi vào pccp_database.json.");
+      if (databaseMode !== "server") {
+        setDatabaseStatus("offline", "Không kết nối được database server.");
         return;
       }
 
@@ -2145,10 +2169,7 @@
     }
 
     function applyDatabase(database) {
-      if (!database.checklists || !Array.isArray(database.checklists.week1)) {
-        throw new Error("Checklist trong database không hợp lệ.");
-      }
-
+      if (!validateDatabase(database)) throw new Error("Cấu trúc JSON database không hợp lệ.");
       roadmapDays = database.checklists.week1;
       state = normalizeState(database.progress);
       lastDatabaseUpdatedAt = database.updatedAt || "";
@@ -2165,8 +2186,8 @@
         const response = await fetch("/api/database", { cache: "no-store" });
         if (!response.ok) throw new Error("Database trả về mã " + response.status);
         const database = await response.json();
+        databaseMode = "server";
 
-        databaseMode = "file";
         if (pendingRetrySnapshot) {
           state = normalizeState(pendingRetrySnapshot);
           pendingRetrySnapshot = null;
@@ -2178,26 +2199,21 @@
         }
         setDatabaseStatus("synced", "pccp_database.json là nguồn dữ liệu hiện tại.");
       } catch (error) {
-        const wasConnected = databaseMode === "file";
-        databaseMode = wasConnected ? "file" : "offline";
-        setDatabaseStatus(
-          wasConnected ? "error" : "offline",
-          "Mở trang qua node server.js để bật JSON database."
-        );
+        const wasConnected = databaseMode === "server";
+        databaseMode = wasConnected ? "server" : "offline";
+        console.warn("Không thể kết nối database server.", error);
+        setDatabaseStatus(wasConnected ? "error" : "offline", error.message);
       }
     }
 
     async function initializeApp() {
+      state = loadLocalState();
+      renderDays();
+      renderErrors();
+      updateProgress();
       setDatabaseStatus("connecting");
       await refreshDatabase(true);
-
-      if (databaseMode !== "file") {
-        state = loadLocalState();
-        renderDays();
-        renderErrors();
-        updateProgress();
-        setPersistenceControlsEnabled(false);
-      }
+      if (databaseMode !== "server") setPersistenceControlsEnabled(false);
 
       window.setInterval(function() {
         refreshDatabase(false);
@@ -2501,12 +2517,23 @@
 
     document.getElementById("days").addEventListener("change", function(event) {
       const checkbox = event.target.closest("[data-task-id]");
-      if (!checkbox) return;
-      state.checked[checkbox.dataset.taskId] = checkbox.checked;
-      saveState({ immediate: true });
-      updateDayCard(Number(checkbox.dataset.day));
-      updateProgress();
-      applyFilter();
+      if (checkbox) {
+        state.checked[checkbox.dataset.taskId] = checkbox.checked;
+        saveState({ immediate: true });
+        updateDayCard(Number(checkbox.dataset.day));
+        updateProgress();
+        applyFilter();
+        return;
+      }
+
+      if (event.target.matches("[data-note-day]")) {
+        state.notes[event.target.dataset.noteDay] = event.target.value;
+        saveState({ immediate: true });
+      }
+      if (event.target.matches("[data-mock]")) {
+        state.mock[event.target.dataset.mock] = event.target.value;
+        saveState({ immediate: true });
+      }
     });
 
     document.getElementById("days").addEventListener("input", function(event) {
@@ -2579,7 +2606,7 @@
     });
 
     window.addEventListener("pagehide", function() {
-      if (databaseMode !== "file" || saveTimer === null) return;
+      if (databaseMode !== "server" || saveTimer === null) return;
       window.clearTimeout(saveTimer);
       saveTimer = null;
       fetch("/api/progress", {

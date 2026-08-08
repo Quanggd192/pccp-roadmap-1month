@@ -25,22 +25,6 @@ async function readDatabase() {
   return JSON.parse(contents);
 }
 
-function validateDatabase(value) {
-  return Boolean(
-    value &&
-    typeof value === "object" &&
-    value.version === 1 &&
-    value.checklists &&
-    Array.isArray(value.checklists.week1) &&
-    value.checklists.week1.length === 7 &&
-    value.progress &&
-    typeof value.progress === "object" &&
-    value.progress.checked &&
-    typeof value.progress.checked === "object" &&
-    Array.isArray(value.progress.errors)
-  );
-}
-
 function validateProgress(value) {
   return Boolean(
     value &&
@@ -56,15 +40,25 @@ function validateProgress(value) {
   );
 }
 
-function writeDatabase(value) {
-  writeQueue = writeQueue
-    .catch(function() {})
-    .then(async function() {
-      const serialized = JSON.stringify(value, null, 2) + "\n";
-      await writeFile(temporaryDatabasePath, serialized, "utf8");
-      await rename(temporaryDatabasePath, databasePath);
+function readRequestBody(request) {
+  return new Promise(function(resolve, reject) {
+    let body = "";
+    let tooLarge = false;
+
+    request.setEncoding("utf8");
+    request.on("data", function(chunk) {
+      if (tooLarge) return;
+      body += chunk;
+      if (Buffer.byteLength(body, "utf8") > maxBodySize) {
+        tooLarge = true;
+        reject(new Error("Request body is too large."));
+      }
     });
-  return writeQueue;
+    request.on("end", function() {
+      if (!tooLarge) resolve(body);
+    });
+    request.on("error", reject);
+  });
 }
 
 function writeProgress(progress) {
@@ -92,25 +86,6 @@ function writeProgress(progress) {
   });
 }
 
-function readRequestBody(request) {
-  return new Promise(function(resolve, reject) {
-    let body = "";
-
-    request.setEncoding("utf8");
-    request.on("data", function(chunk) {
-      body += chunk;
-      if (Buffer.byteLength(body, "utf8") > maxBodySize) {
-        reject(new Error("Request body is too large."));
-        request.destroy();
-      }
-    });
-    request.on("end", function() {
-      resolve(body);
-    });
-    request.on("error", reject);
-  });
-}
-
 const server = http.createServer(async function(request, response) {
   const requestUrl = new URL(request.url, "http://" + request.headers.host);
 
@@ -118,21 +93,6 @@ const server = http.createServer(async function(request, response) {
     if (request.method === "GET" && requestUrl.pathname === "/api/database") {
       const database = await readDatabase();
       sendJson(response, 200, database);
-      return;
-    }
-
-    if (request.method === "PUT" && requestUrl.pathname === "/api/database") {
-      const body = await readRequestBody(request);
-      const database = JSON.parse(body);
-
-      if (!validateDatabase(database)) {
-        sendJson(response, 400, { error: "Database payload is invalid." });
-        return;
-      }
-
-      database.updatedAt = new Date().toISOString();
-      await writeDatabase(database);
-      sendJson(response, 200, { ok: true, updatedAt: database.updatedAt });
       return;
     }
 
