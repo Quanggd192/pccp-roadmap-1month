@@ -954,6 +954,73 @@
       content: "CLOSE −";
     }
 
+    .code-sample-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 10px 13px 0;
+    }
+
+    .sample-modified {
+      margin-right: auto;
+      color: var(--yellow);
+      font-family: var(--mono);
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .sample-action {
+      padding: 6px 9px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--surface-3);
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .sample-action:hover {
+      border-color: var(--blue);
+      color: var(--text);
+    }
+
+    .sample-action-primary {
+      border-color: rgba(87, 166, 230, 0.5);
+      background: rgba(87, 166, 230, 0.12);
+      color: var(--blue);
+    }
+
+    .code-sample-editor {
+      padding: 12px 13px 14px;
+    }
+
+    .code-sample-editor textarea {
+      display: block;
+      width: 100%;
+      min-height: 230px;
+      resize: vertical;
+      border: 1px solid rgba(87, 166, 230, 0.4);
+      border-radius: 8px;
+      outline: none;
+      background: #080d12;
+      color: #bfd5e8;
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.65;
+      tab-size: 4;
+    }
+
+    .code-sample-editor textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(87, 166, 230, 0.1);
+    }
+
     .code-sample pre {
       overflow-x: auto;
       margin: 0;
@@ -2007,6 +2074,7 @@
     const defaultState = {
       checked: {},
       notes: {},
+      sampleCodes: {},
       errors: [],
       mock: { score: "", solved: "", minutes: "", weak: "" },
       openDays: [1]
@@ -2026,6 +2094,7 @@
       return {
         checked: saved.checked && typeof saved.checked === "object" ? saved.checked : {},
         notes: saved.notes && typeof saved.notes === "object" ? saved.notes : {},
+        sampleCodes: saved.sampleCodes && typeof saved.sampleCodes === "object" ? saved.sampleCodes : {},
         errors: Array.isArray(saved.errors) ? saved.errors : [],
         mock: Object.assign({}, defaultState.mock, saved.mock || {}),
         openDays: Array.isArray(saved.openDays) ? saved.openDays : [1]
@@ -2053,6 +2122,9 @@
       const selector = [
         "#days input",
         "#days textarea",
+        "#days [data-edit-sample]",
+        "#days [data-save-sample]",
+        "#days [data-reset-sample]",
         "#errorForm input",
         "#errorForm select",
         "#errorForm textarea",
@@ -2233,6 +2305,10 @@
       return "day-" + day + "-" + group + "-" + index;
     }
 
+    function sampleCodeId(day, index) {
+      return "day-" + day + "-sample-" + index;
+    }
+
     function taskIdsForDay(dayData) {
       const ids = [];
       Object.keys(groupConfig).forEach(function(group) {
@@ -2309,11 +2385,28 @@
         : [{ title: "Python quick reference", code: dayData.code || "" }];
       let samplesMarkup = "";
 
-      samples.forEach(function(sample) {
+      samples.forEach(function(sample, index) {
+        const id = sampleCodeId(dayData.day, index);
+        const modified = Object.prototype.hasOwnProperty.call(state.sampleCodes, id);
+        const code = modified ? state.sampleCodes[id] : sample.code;
         samplesMarkup +=
-          '<details class="code-sample">' +
+          '<details class="code-sample" data-sample-day="' + dayData.day + '" data-sample-index="' + index + '">' +
             "<summary>" + escapeHtml(sample.title) + "</summary>" +
-            "<pre><code>" + escapeHtml(sample.code) + "</code></pre>" +
+            '<div class="code-sample-view" data-sample-view>' +
+              '<div class="code-sample-actions">' +
+                '<span class="sample-modified" data-sample-modified' + (modified ? "" : " hidden") + '>Đã chỉnh sửa</span>' +
+                '<button class="sample-action" type="button" data-edit-sample>Chỉnh sửa</button>' +
+              "</div>" +
+              '<pre><code data-sample-code>' + escapeHtml(code) + "</code></pre>" +
+            "</div>" +
+            '<div class="code-sample-editor" data-sample-editor hidden>' +
+              '<textarea data-sample-input aria-label="Chỉnh sửa sample code">' + escapeHtml(code) + "</textarea>" +
+              '<div class="code-sample-actions">' +
+                '<button class="sample-action" type="button" data-reset-sample' + (modified ? "" : " hidden") + '>Code gốc</button>' +
+                '<button class="sample-action" type="button" data-cancel-sample>Hủy</button>' +
+                '<button class="sample-action sample-action-primary" type="button" data-save-sample>Lưu code</button>' +
+              "</div>" +
+            "</div>" +
           "</details>";
       });
 
@@ -2323,6 +2416,28 @@
           '<div class="sample-list">' + samplesMarkup + "</div>" +
         "</section>"
       );
+    }
+
+    function originalSampleCode(dayNumber, sampleIndex) {
+      const dayData = roadmapDays.find(function(day) { return day.day === dayNumber; });
+      if (!dayData) return "";
+      const samples = Array.isArray(dayData.samples) && dayData.samples.length
+        ? dayData.samples
+        : [{ title: "Python quick reference", code: dayData.code || "" }];
+      return samples[sampleIndex] ? samples[sampleIndex].code : "";
+    }
+
+    function setSampleEditorOpen(sample, open) {
+      sample.querySelector("[data-sample-view]").hidden = open;
+      sample.querySelector("[data-sample-editor]").hidden = !open;
+      if (open) sample.querySelector("[data-sample-input]").focus();
+    }
+
+    function updateSampleDisplay(sample, code, modified) {
+      sample.querySelector("[data-sample-code]").textContent = code;
+      sample.querySelector("[data-sample-input]").value = code;
+      sample.querySelector("[data-sample-modified]").hidden = !modified;
+      sample.querySelector("[data-reset-sample]").hidden = !modified;
     }
 
     function renderMockPanel() {
@@ -2502,6 +2617,40 @@
     }
 
     document.getElementById("days").addEventListener("click", function(event) {
+      const sampleAction = event.target.closest(
+        "[data-edit-sample], [data-save-sample], [data-cancel-sample], [data-reset-sample]"
+      );
+      if (sampleAction) {
+        const sample = sampleAction.closest("[data-sample-day]");
+        const dayNumber = Number(sample.dataset.sampleDay);
+        const sampleIndex = Number(sample.dataset.sampleIndex);
+        const id = sampleCodeId(dayNumber, sampleIndex);
+        const input = sample.querySelector("[data-sample-input]");
+
+        if (sampleAction.matches("[data-edit-sample]")) {
+          setSampleEditorOpen(sample, true);
+        } else if (sampleAction.matches("[data-cancel-sample]")) {
+          input.value = sample.querySelector("[data-sample-code]").textContent;
+          setSampleEditorOpen(sample, false);
+        } else if (sampleAction.matches("[data-reset-sample]")) {
+          const originalCode = originalSampleCode(dayNumber, sampleIndex);
+          delete state.sampleCodes[id];
+          updateSampleDisplay(sample, originalCode, false);
+          setSampleEditorOpen(sample, false);
+          saveState({ immediate: true });
+        } else {
+          const originalCode = originalSampleCode(dayNumber, sampleIndex);
+          const code = input.value;
+          const modified = code !== originalCode;
+          if (modified) state.sampleCodes[id] = code;
+          else delete state.sampleCodes[id];
+          updateSampleDisplay(sample, code, modified);
+          setSampleEditorOpen(sample, false);
+          saveState({ immediate: true });
+        }
+        return;
+      }
+
       const toggle = event.target.closest("[data-toggle-day]");
       if (!toggle) return;
       const dayNumber = Number(toggle.dataset.toggleDay);
@@ -2585,7 +2734,7 @@
     });
 
     document.getElementById("resetButton").addEventListener("click", function() {
-      const confirmed = window.confirm("Reset toàn bộ checklist, ghi chú, mock result và error log của Tuần 1?");
+      const confirmed = window.confirm("Reset toàn bộ checklist, sample code đã sửa, ghi chú, mock result và error log của Tuần 1?");
       if (!confirmed) return;
       state = structuredClone(defaultState);
       saveState({ immediate: true });
