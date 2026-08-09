@@ -2155,13 +2155,13 @@
         succeeded = true;
       } catch (error) {
         pendingRetrySnapshot = structuredClone(progressSnapshot);
-        console.warn("Không thể ghi pccp_database.json.", error);
+        console.warn("Không thể ghi tiến độ lên Supabase.", error);
       } finally {
         databaseWritesPending -= 1;
         if (databaseWritesPending === 0) {
           setDatabaseStatus(
             succeeded ? "synced" : "error",
-            succeeded ? "Tiến độ đã ghi vào pccp_database.json." : "Không thể ghi pccp_database.json."
+            succeeded ? "Tiến độ đã đồng bộ lên Supabase." : "Không thể ghi tiến độ lên Supabase."
           );
         }
       }
@@ -2197,7 +2197,7 @@
         if (force || (database.updatedAt || "") !== lastDatabaseUpdatedAt) {
           applyDatabase(database);
         }
-        setDatabaseStatus("synced", "pccp_database.json là nguồn dữ liệu hiện tại.");
+        setDatabaseStatus("synced", "Supabase là nguồn dữ liệu hiện tại.");
       } catch (error) {
         const wasConnected = databaseMode === "server";
         databaseMode = wasConnected ? "server" : "offline";

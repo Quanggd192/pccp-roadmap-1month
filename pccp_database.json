@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-07T13:50:47.838Z",
+  "updatedAt": "2026-08-08T06:51:28.991Z",
   "checklists": {
     "week1": [
       {
@@ -295,7 +295,13 @@
     ]
   },
   "progress": {
-    "checked": {},
+    "checked": {
+      "day-1-theory-0": true,
+      "day-1-theory-1": true,
+      "day-1-theory-2": true,
+      "day-1-practice-5": true,
+      "day-1-practice-0": true
+    },
     "notes": {},
     "errors": [],
     "mock": {

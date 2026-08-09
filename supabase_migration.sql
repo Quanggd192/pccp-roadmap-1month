@@ -1,0 +1,158 @@
+-- Supabase migration for the PCCP roadmap database.
+-- Run this file once in the Supabase SQL Editor or through "supabase db push".
+-- The document column intentionally preserves the current pccp_database.json shape.
+--
+-- Security model:
+--   - RLS is enabled.
+--   - anon/authenticated browser clients receive no table permissions.
+--   - A Vercel API should access this table with a server-only secret key.
+--   - Never expose a Supabase secret/service_role key in pccp_week1.html.
+
+begin;
+
+create table if not exists public.pccp_databases (
+  id text primary key,
+  document jsonb not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+
+  constraint pccp_databases_id_not_blank
+    check (length(btrim(id)) > 0),
+  constraint pccp_databases_document_is_object
+    check (jsonb_typeof(document) = 'object'),
+  constraint pccp_databases_version_is_number
+    check (jsonb_typeof(document -> 'version') = 'number'),
+  constraint pccp_databases_week1_is_array
+    check (jsonb_typeof(document #> '{checklists,week1}') = 'array'),
+  constraint pccp_databases_progress_is_object
+    check (jsonb_typeof(document -> 'progress') = 'object')
+);
+
+comment on table public.pccp_databases is
+  'JSON documents backing the PCCP roadmap application.';
+
+comment on column public.pccp_databases.id is
+  'Stable document key, currently week1.';
+
+comment on column public.pccp_databases.document is
+  'Database payload matching pccp_database.json.';
+
+create or replace function public.touch_pccp_database_updated_at()
+returns trigger
+language plpgsql
+set search_path = ''
+as $function$
+begin
+  new.updated_at = statement_timestamp();
+  new.document = jsonb_set(
+    new.document,
+    '{updatedAt}',
+    to_jsonb(
+      to_char(
+        new.updated_at at time zone 'UTC',
+        'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'
+      )
+    ),
+    true
+  );
+  return new;
+end;
+$function$;
+
+drop trigger if exists pccp_databases_touch_updated_at
+  on public.pccp_databases;
+
+create trigger pccp_databases_touch_updated_at
+before update on public.pccp_databases
+for each row
+execute function public.touch_pccp_database_updated_at();
+
+insert into public.pccp_databases (id, document, updated_at)
+values (
+  'week1',
+  $pccp_json$
+{"version":1,"updatedAt":"2026-08-08T06:51:28.991Z","checklists":{"week1":[{"day":1,"title":"HashMap / Set — cơ bản","topic":"dict · set · Counter · O(1) lookup","recognition":"Thấy “đếm”, “duplicate”, “mapping” hoặc “lookup nhanh” → nghĩ tới dict / set trước khi nghĩ nested loop.","code":"from collections import Counter, defaultdict\n\nfreq = Counter(nums)\nseen = set()\ngroups = defaultdict(list)","samples":[{"title":"Frequency counting · Counter","code":"from collections import Counter\n\nfreq = Counter(nums)\nfor value, count in freq.items():\n    print(value, count)"},{"title":"Duplicate lookup · set","code":"def has_duplicate(nums):\n    seen = set()\n    for value in nums:\n        if value in seen:\n            return True\n        seen.add(value)\n    return False"},{"title":"Grouping · defaultdict","code":"from collections import defaultdict\n\ndef group_anagrams(words):\n    groups = defaultdict(list)\n    for word in words:\n        key = tuple(sorted(word))\n        groups[key].append(word)\n    return list(groups.values())"},{"title":"Lookup complement · Two Sum","code":"def two_sum(nums, target):\n    position = {}\n    for index, value in enumerate(nums):\n        need = target - value\n        if need in position:\n            return [position[need], index]\n        position[value] = index\n    return []"}],"theory":["Ôn dict: get(), in, items() và lookup O(1) trung bình","Ôn set: add(), remove/discard() và loại duplicate","Dùng Counter để frequency counting, defaultdict để group"],"practice":["Two Sum #1","Contains Duplicate #217","Group Anagrams #49","Valid Anagram #242","First Unique Character #387","Intersection of Two Arrays #349","Subarray Sum Equals K #560"],"error":["Ghi ít nhất 1 dấu hiệu giúp nhận ra bài dùng Map / Set"]},{"day":2,"title":"HashMap / Set — nâng cao","topic":"multi-key mapping · signature encoding","recognition":"Mục tiêu hôm nay là biến cấu trúc so sánh phức tạp thành một key ổn định rồi dùng map để gom nhóm hoặc lookup.","code":"from collections import Counter\n\ndef signature(word):\n    return tuple(sorted(Counter(word).items()))","samples":[{"title":"Immutable frequency signature","code":"from collections import Counter\n\ndef signature(word):\n    return tuple(sorted(Counter(word).items()))"},{"title":"Bidirectional mapping","code":"def is_isomorphic(source, target):\n    forward, backward = {}, {}\n    for left, right in zip(source, target):\n        if forward.get(left, right) != right:\n            return False\n        if backward.get(right, left) != left:\n            return False\n        forward[left] = right\n        backward[right] = left\n    return True"},{"title":"Longest consecutive sequence","code":"def longest_consecutive(nums):\n    values = set(nums)\n    best = 0\n    for start in values:\n        if start - 1 in values:\n            continue\n        length = 1\n        while start + length in values:\n            length += 1\n        best = max(best, length)\n    return best"},{"title":"Top-K frequency","code":"from collections import Counter\n\ndef top_k_frequent(nums, k):\n    frequency = Counter(nums)\n    return [value for value, _ in frequency.most_common(k)]"}],"theory":["Biến frequency map thành signature có thể hash","Dùng hai map khi cần kiểm tra mapping hai chiều","Phân biệt group-by, count-by và lookup ngược"],"practice":["Longest Consecutive Sequence #128","Top K Frequent Elements #347","Isomorphic Strings #205","Word Pattern #290","4Sum II #454","Ransom Note #383"],"error":["Chọn 1 bài O(n²), viết lại ý tưởng O(n) bằng map"]},{"day":3,"title":"Sorting + Custom Comparator","topic":"sorted(key=) · cmp_to_key · multi-criteria","recognition":"Trước khi code phần còn lại, hỏi: sort theo thứ tự nào thì bài toán trở nên gần như tuyến tính?","code":"from functools import cmp_to_key\n\nitems = sorted(items, key=lambda x: (x[0], -x[1]))\nnums.sort(key=cmp_to_key(compare))","samples":[{"title":"Multi-key sorting","code":"# name tăng dần, score giảm dần\nrecords.sort(key=lambda item: (item['name'], -item['score']))"},{"title":"Stable sort","code":"# Python sort là stable: thứ tự cũ được giữ khi key bằng nhau\nitems = sorted(items, key=lambda item: item['priority'])"},{"title":"Custom comparator · Largest Number","code":"from functools import cmp_to_key\n\ndef compare(a, b):\n    if a + b > b + a:\n        return -1\n    if a + b < b + a:\n        return 1\n    return 0\n\ndef largest_number(nums):\n    values = sorted(map(str, nums), key=cmp_to_key(compare))\n    return ''.join(values).lstrip('0') or '0'"},{"title":"Sort then scan · Merge Intervals","code":"def merge(intervals):\n    intervals.sort(key=lambda interval: interval[0])\n    merged = []\n    for start, end in intervals:\n        if not merged or start > merged[-1][1]:\n            merged.append([start, end])\n        else:\n            merged[-1][1] = max(merged[-1][1], end)\n    return merged"}],"theory":["Ôn sorted() và list.sort(): khác biệt về giá trị trả về","Viết key nhiều tiêu chí bằng tuple","Dùng cmp_to_key khi không thể biểu diễn bằng key đơn giản"],"practice":["Merge Intervals #56","Non-overlapping Intervals #435","Meeting Rooms II #253","Largest Number #179","Sort Colors #75","H-Index #274"],"error":["Ghi lại tiêu chí sort sai hoặc tie-breaker từng bỏ sót"]},{"day":4,"title":"Prefix Sum + Two Pointers","topic":"accumulate · sliding window · expand/shrink","recognition":"Tổng đoạn con → thử prefix sum. Đoạn liên tiếp tối ưu dưới điều kiện → thử sliding window. Mảng đã sort → nghĩ two pointers.","code":"from itertools import accumulate\n\nprefix = [0] + list(accumulate(nums))\n# sum(nums[l:r]) = prefix[r] - prefix[l]","samples":[{"title":"Range sum · Prefix Sum","code":"from itertools import accumulate\n\nprefix = [0] + list(accumulate(nums))\n\ndef range_sum(left, right):\n    return prefix[right + 1] - prefix[left]"},{"title":"Prefix Sum + HashMap","code":"def subarray_sum(nums, target):\n    count = 0\n    prefix = 0\n    frequency = {0: 1}\n    for value in nums:\n        prefix += value\n        count += frequency.get(prefix - target, 0)\n        frequency[prefix] = frequency.get(prefix, 0) + 1\n    return count"},{"title":"Two pointers · sorted array","code":"def pair_sum(values, target):\n    left, right = 0, len(values) - 1\n    while left < right:\n        total = values[left] + values[right]\n        if total == target:\n            return left, right\n        if total < target:\n            left += 1\n        else:\n            right -= 1\n    return -1, -1"},{"title":"Variable sliding window","code":"def min_subarray_len(target, nums):\n    left = 0\n    total = 0\n    answer = len(nums) + 1\n    for right, value in enumerate(nums):\n        total += value\n        while total >= target:\n            answer = min(answer, right - left + 1)\n            total -= nums[left]\n            left += 1\n    return 0 if answer > len(nums) else answer"}],"theory":["Dựng prefix sum có phần tử 0 ở đầu để tránh lệch index","Phân biệt sliding window cố định và biến đổi","Viết rõ invariant trước khi di chuyển left / right"],"practice":["Subarray Sum Equals K #560 — làm lại","Maximum Subarray #53","Two Sum II #167","3Sum #15","Longest Substring Without Repeating #3","Minimum Size Subarray Sum #209","Sliding Window Maximum #239 [stretch]"],"error":["Ghi 1 trường hợp sliding window không áp dụng được"]},{"day":5,"title":"Stack / Queue","topic":"monotonic stack · collections.deque","recognition":"“Phần tử gần nhất lớn/nhỏ hơn” → monotonic stack. Xử lý theo thứ tự đến trước → queue / deque.","code":"from collections import deque\n\nqueue = deque()\nstack = []\n\n# O(1) ở hai đầu deque\nqueue.append(x)\nqueue.popleft()","samples":[{"title":"Stack · Valid Parentheses","code":"def is_valid(text):\n    pairs = {')': '(', ']': '[', '}': '{'}\n    stack = []\n    for char in text:\n        if char not in pairs:\n            stack.append(char)\n        elif not stack or stack.pop() != pairs[char]:\n            return False\n    return not stack"},{"title":"Queue · deque","code":"from collections import deque\n\nqueue = deque([start])\nwhile queue:\n    node = queue.popleft()\n    for neighbor in graph[node]:\n        queue.append(neighbor)"},{"title":"Monotonic stack · Daily Temperatures","code":"def daily_temperatures(values):\n    answer = [0] * len(values)\n    stack = []\n    for index, value in enumerate(values):\n        while stack and values[stack[-1]] < value:\n            previous = stack.pop()\n            answer[previous] = index - previous\n        stack.append(index)\n    return answer"},{"title":"Min stack","code":"stack = []\nminimums = []\n\ndef push(value):\n    stack.append(value)\n    minimums.append(value if not minimums else min(value, minimums[-1]))\n\ndef pop():\n    minimums.pop()\n    return stack.pop()\n\ndef get_min():\n    return minimums[-1]"}],"theory":["Ôn stack bằng list: append() và pop()","Ôn queue bằng deque, không dùng list.pop(0)","Hiểu invariant của monotonic increasing/decreasing stack"],"practice":["Valid Parentheses #20","Daily Temperatures #739","Next Greater Element I #496","Next Greater Element II #503","Min Stack #155","Evaluate Reverse Polish Notation #150","Implement Queue using Stacks #232"],"error":["Ghi lại invariant stack của bài khó nhất hôm nay"]},{"day":6,"title":"Binary Search trên index & answer","topic":"bisect · monotonic check(x) · boundary","recognition":"Có “giá trị nhỏ nhất/lớn nhất thỏa điều kiện” và check(x) đơn điệu → binary search trên answer.","code":"lo, hi = min_answer, max_answer\nwhile lo < hi:\n    mid = (lo + hi) // 2\n    if check(mid):\n        hi = mid\n    else:\n        lo = mid + 1","samples":[{"title":"Classic binary search","code":"def binary_search(nums, target):\n    left, right = 0, len(nums) - 1\n    while left <= right:\n        mid = (left + right) // 2\n        if nums[mid] == target:\n            return mid\n        if nums[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return -1"},{"title":"Lower bound · bisect_left","code":"from bisect import bisect_left\n\nindex = bisect_left(nums, target)\nfound = index < len(nums) and nums[index] == target"},{"title":"Rotated sorted array","code":"def search_rotated(nums, target):\n    left, right = 0, len(nums) - 1\n    while left <= right:\n        mid = (left + right) // 2\n        if nums[mid] == target:\n            return mid\n        if nums[left] <= nums[mid]:\n            if nums[left] <= target < nums[mid]:\n                right = mid - 1\n            else:\n                left = mid + 1\n        elif nums[mid] < target <= nums[right]:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return -1"},{"title":"Search on answer · Koko","code":"def min_speed(piles, hours):\n    def feasible(speed):\n        used = sum((pile + speed - 1) // speed for pile in piles)\n        return used <= hours\n\n    left, right = 1, max(piles)\n    while left < right:\n        mid = (left + right) // 2\n        if feasible(mid):\n            right = mid\n        else:\n            left = mid + 1\n    return left"}],"theory":["Chọn rõ interval đóng [lo, hi] trước khi code","Ôn bisect_left và bisect_right","Viết check(x) riêng cho binary search on answer"],"practice":["Binary Search #704","Search in Rotated Sorted Array #33","First and Last Position #34","Koko Eating Bananas #875","Capacity To Ship Packages #1011","Split Array Largest Sum #410 [stretch]"],"error":["Ghi một lỗi boundary và test case nhỏ nhất bắt được lỗi đó"]},{"day":7,"title":"Mock PCCP + thống kê lỗi","topic":"full timed mock · no lookup · review","recognition":"Thi như thi thật: ưu tiên câu chắc điểm, đặt mốc thời gian bỏ qua và chỉ tối ưu sau khi đã có lời giải đúng.","code":"# Trước khi submit\n# 1. Empty / single item\n# 2. Min / max constraint\n# 3. Duplicate values\n# 4. Time & space complexity","samples":[{"title":"PCCP solution entry point","code":"def solution(data):\n    answer = 0\n    # 1. Parse / normalize input\n    # 2. Apply selected pattern\n    # 3. Return exact required type\n    return answer"},{"title":"Table-driven edge cases","code":"cases = [\n    ([], 0),\n    ([1], 1),\n    ([1, 1, 1], 3),\n]\n\nfor data, expected in cases:\n    assert solution(data) == expected"},{"title":"Local runtime measurement","code":"from time import perf_counter\n\nstarted = perf_counter()\nresult = solution(test_input)\nelapsed_ms = (perf_counter() - started) * 1000\nprint(result, f'{elapsed_ms:.2f} ms')"},{"title":"Failed-case replay","code":"failed_cases = []\n\ndef verify(data, expected):\n    actual = solution(data)\n    if actual != expected:\n        failed_cases.append({\n            'input': data,\n            'expected': expected,\n            'actual': actual,\n        })"}],"theory":["Chốt chiến thuật thứ tự làm bài và mốc thời gian bỏ qua","Chuẩn bị template Python quen tay","Tắt tài liệu, tắt gợi ý và đặt timer như thi thật"],"practice":["Làm 1 mock PCCP hoàn chỉnh có bấm giờ","Tự test edge case trước mỗi lần submit","Chữa lại toàn bộ câu sai mà không nhìn lời giải"],"error":["Phân loại lỗi: pattern / code / edge case / thời gian","Chọn đúng 2 dạng yếu nhất để ưu tiên ở Tuần 2"],"mock":true}]},"progress":{"checked":{"day-1-theory-0":true,"day-1-theory-1":true,"day-1-theory-2":true,"day-1-practice-5":true,"day-1-practice-0":true},"notes":{},"errors":[],"mock":{"score":"","solved":"","minutes":"","weak":""},"openDays":[1]}}
+$pccp_json$::jsonb,
+  '2026-08-08T06:51:28.991Z'::timestamptz
+)
+on conflict (id) do nothing;
+
+create or replace function public.update_pccp_progress(
+  p_id text,
+  p_progress jsonb
+)
+returns jsonb
+language plpgsql
+set search_path = ''
+as $function$
+declare
+  result jsonb;
+begin
+  if jsonb_typeof(p_progress) is distinct from 'object' then
+    raise exception 'Progress payload must be a JSON object.'
+      using errcode = '22023';
+  end if;
+
+  update public.pccp_databases as database
+  set document = jsonb_set(
+    database.document,
+    '{progress}',
+    p_progress,
+    true
+  )
+  where database.id = p_id
+  returning jsonb_build_object(
+    'ok',
+    true,
+    'updatedAt',
+    database.document ->> 'updatedAt'
+  )
+  into result;
+
+  if result is null then
+    raise exception 'PCCP database "%" was not found.', p_id
+      using errcode = 'P0002';
+  end if;
+
+  return result;
+end;
+$function$;
+
+alter table public.pccp_databases enable row level security;
+
+revoke all on table public.pccp_databases from anon;
+revoke all on table public.pccp_databases from authenticated;
+grant select, insert, update, delete
+  on table public.pccp_databases
+  to service_role;
+
+revoke execute
+  on function public.touch_pccp_database_updated_at()
+  from public;
+revoke execute
+  on function public.touch_pccp_database_updated_at()
+  from anon;
+revoke execute
+  on function public.touch_pccp_database_updated_at()
+  from authenticated;
+
+revoke execute
+  on function public.update_pccp_progress(text, jsonb)
+  from public;
+revoke execute
+  on function public.update_pccp_progress(text, jsonb)
+  from anon;
+revoke execute
+  on function public.update_pccp_progress(text, jsonb)
+  from authenticated;
+grant execute
+  on function public.update_pccp_progress(text, jsonb)
+  to service_role;
+
+commit;
+
+-- Verification query:
+-- select id, document, created_at, updated_at
+-- from public.pccp_databases
+-- where id = 'week1';
+

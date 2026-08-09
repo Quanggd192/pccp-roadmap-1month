@@ -1,13 +1,22 @@
 const http = require("node:http");
 const path = require("node:path");
-const { readFile, writeFile, rename } = require("node:fs/promises");
+const { readFile } = require("node:fs/promises");
+
+if (typeof process.loadEnvFile === "function") {
+  try {
+    process.loadEnvFile(path.join(__dirname, ".env"));
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+}
+
+const supabase = require("./supabase");
 
 const host = "127.0.0.1";
 const port = Number(process.env.PORT) || 8000;
 const projectDirectory = __dirname;
 const htmlPath = path.join(projectDirectory, "pccp_week1.html");
-const databasePath = path.join(projectDirectory, "pccp_database.json");
-const temporaryDatabasePath = path.join(projectDirectory, "pccp_database.json.tmp");
+const databaseId = "week1";
 const maxBodySize = 1024 * 1024;
 
 let writeQueue = Promise.resolve();
@@ -21,8 +30,14 @@ function sendJson(response, statusCode, value) {
 }
 
 async function readDatabase() {
-  const contents = await readFile(databasePath, "utf8");
-  return JSON.parse(contents);
+  const { data, error } = await supabase
+    .from("pccp_databases")
+    .select("document")
+    .eq("id", databaseId)
+    .single();
+
+  if (error) throw error;
+  return data.document;
 }
 
 function validateProgress(value) {
@@ -67,18 +82,13 @@ function writeProgress(progress) {
   writeQueue = writeQueue
     .catch(function() {})
     .then(async function() {
-      const database = await readDatabase();
-      database.progress = progress;
-      database.updatedAt = new Date().toISOString();
+      const { data, error } = await supabase.rpc("update_pccp_progress", {
+        p_id: databaseId,
+        p_progress: progress
+      });
 
-      const serialized = JSON.stringify(database, null, 2) + "\n";
-      await writeFile(temporaryDatabasePath, serialized, "utf8");
-      await rename(temporaryDatabasePath, databasePath);
-
-      result = {
-        ok: true,
-        updatedAt: database.updatedAt
-      };
+      if (error) throw error;
+      result = data;
     });
 
   return writeQueue.then(function() {
@@ -111,7 +121,8 @@ const server = http.createServer(async function(request, response) {
     }
 
     if (request.method === "GET" && requestUrl.pathname === "/api/health") {
-      sendJson(response, 200, { ok: true });
+      await readDatabase();
+      sendJson(response, 200, { ok: true, database: "supabase" });
       return;
     }
 
