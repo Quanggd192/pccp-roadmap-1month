@@ -24,3 +24,16 @@ must open the server URL so the Supabase service-role key remains server-only.
 
 Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env before starting the
 server. Run supabase_migration.sql once when provisioning a new database.
+
+## Daily reminders
+
+- The user selects a course start date, which is stored in Supabase progress.
+- The schedule is fixed to one session per calendar day: the start date is
+  Session 1, the following date is Session 2, and so on through Session 7.
+- The app schedules the day's content reminder for 08:00 local device time.
+- At 12:00 and 17:00, the app reminds again only when that day's fixed session
+  is still incomplete.
+- Browser notifications require the user to grant permission once. The in-page
+  reminder remains available when permission is unavailable or blocked.
+- Timers run while the page is open; returning to the tab after a reminder time
+  triggers the missed reminder immediately.

@@ -254,6 +254,131 @@
       color: var(--yellow);
     }
 
+    .daily-reminder {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      margin: 0 0 28px;
+      padding: 14px;
+      border: 1px solid rgba(241, 196, 82, 0.3);
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(241, 196, 82, 0.11), rgba(87, 166, 230, 0.08));
+    }
+
+    .daily-reminder[hidden] {
+      display: none;
+    }
+
+    .reminder-icon {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--yellow);
+      color: #11161d;
+      font-size: 18px;
+    }
+
+    .reminder-copy {
+      min-width: 0;
+    }
+
+    .reminder-copy strong,
+    .reminder-copy span {
+      display: block;
+    }
+
+    .reminder-copy strong {
+      margin-bottom: 3px;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .reminder-copy span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .reminder-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 7px;
+    }
+
+    .reminder-action {
+      min-height: 32px;
+      padding: 0 10px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      background: var(--surface-2);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .reminder-action-primary {
+      border-color: var(--yellow);
+      background: var(--yellow);
+      color: #11161d;
+    }
+
+    .schedule-settings {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 10px;
+      margin: -18px 0 14px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+    }
+
+    .schedule-date-field {
+      display: grid;
+      flex: 1 1 190px;
+      gap: 5px;
+    }
+
+    .schedule-date-field label {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .schedule-date-field input {
+      min-height: 38px;
+      padding: 0 10px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      outline: none;
+      background: var(--surface-2);
+      color: var(--text);
+      color-scheme: dark;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .schedule-date-field input:focus {
+      border-color: var(--yellow);
+    }
+
+    .schedule-status {
+      flex: 1 0 100%;
+      color: var(--muted-2);
+      font-family: var(--mono);
+      font-size: 9px;
+    }
+
     .button {
       min-height: 48px;
       display: inline-flex;
@@ -1407,6 +1532,19 @@
         width: 100%;
       }
 
+      .daily-reminder {
+        grid-template-columns: auto minmax(0, 1fr);
+      }
+
+      .reminder-actions {
+        grid-column: 1 / -1;
+        justify-content: stretch;
+      }
+
+      .reminder-action {
+        flex: 1;
+      }
+
       .hero-facts {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -1567,10 +1705,30 @@
           </button>
           <a class="button button-secondary" href="#roadmap">Xem curriculum</a>
         </div>
+        <form class="schedule-settings" id="courseScheduleForm">
+          <div class="schedule-date-field">
+            <label for="courseStartDate">Ngày bắt đầu khóa học</label>
+            <input id="courseStartDate" name="courseStartDate" type="date" required>
+          </div>
+          <button class="reminder-action reminder-action-primary" type="submit">Lưu lịch học</button>
+          <button class="reminder-action" id="enableNotifications" type="button">Bật thông báo</button>
+          <span class="schedule-status" id="scheduleStatus">Chọn ngày bắt đầu để xếp cố định 1 session mỗi ngày.</span>
+        </form>
         <div class="database-notice" id="databaseNotice" role="status" hidden>
           <span id="databaseNoticeText">
             Database server offline. Chạy node server.js rồi mở http://127.0.0.1:8000.
           </span>
+        </div>
+        <div class="daily-reminder" id="dailyReminder" role="status" hidden>
+          <span class="reminder-icon" aria-hidden="true">⏰</span>
+          <div class="reminder-copy">
+            <strong id="reminderTitle">Nội dung học hôm nay</strong>
+            <span id="reminderMessage"></span>
+          </div>
+          <div class="reminder-actions">
+            <button class="reminder-action reminder-action-primary" id="openReminderDay" type="button">Mở bài học</button>
+            <button class="reminder-action" id="dismissReminder" type="button">Đóng</button>
+          </div>
         </div>
         <div class="hero-facts" aria-label="Thông tin kế hoạch">
           <div class="fact">
@@ -2071,10 +2229,12 @@
     };
 
     const storageKey = "pccp-1000-week-1-v1";
+    const reminderStorageKey = "pccp-1000-reminders-v1";
     const defaultState = {
       checked: {},
       notes: {},
       sampleCodes: {},
+      courseStartDate: "",
       errors: [],
       mock: { score: "", solved: "", minutes: "", weak: "" },
       openDays: [1]
@@ -2088,6 +2248,9 @@
     let databaseWritesPending = 0;
     let lastDatabaseUpdatedAt = "";
     let pendingRetrySnapshot = null;
+    let reminderSettings = loadReminderSettings();
+    let reminderTimers = [];
+    let reminderTargetDay = null;
 
     function normalizeState(value) {
       const saved = value && typeof value === "object" ? value : {};
@@ -2095,6 +2258,7 @@
         checked: saved.checked && typeof saved.checked === "object" ? saved.checked : {},
         notes: saved.notes && typeof saved.notes === "object" ? saved.notes : {},
         sampleCodes: saved.sampleCodes && typeof saved.sampleCodes === "object" ? saved.sampleCodes : {},
+        courseStartDate: typeof saved.courseStartDate === "string" ? saved.courseStartDate : "",
         errors: Array.isArray(saved.errors) ? saved.errors : [],
         mock: Object.assign({}, defaultState.mock, saved.mock || {}),
         openDays: Array.isArray(saved.openDays) ? saved.openDays : [1]
@@ -2118,6 +2282,26 @@
       }
     }
 
+    function loadReminderSettings() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(reminderStorageKey));
+        return {
+          enabled: Boolean(saved && saved.enabled),
+          days: saved && saved.days && typeof saved.days === "object" ? saved.days : {}
+        };
+      } catch (error) {
+        return { enabled: false, days: {} };
+      }
+    }
+
+    function saveReminderSettings() {
+      try {
+        localStorage.setItem(reminderStorageKey, JSON.stringify(reminderSettings));
+      } catch (error) {
+        console.warn("Không thể lưu cài đặt nhắc nhở.", error);
+      }
+    }
+
     function setPersistenceControlsEnabled(enabled) {
       const selector = [
         "#days input",
@@ -2125,6 +2309,8 @@
         "#days [data-edit-sample]",
         "#days [data-save-sample]",
         "#days [data-reset-sample]",
+        "#courseStartDate",
+        "#courseScheduleForm button[type='submit']",
         "#errorForm input",
         "#errorForm select",
         "#errorForm textarea",
@@ -2246,6 +2432,7 @@
       state = normalizeState(database.progress);
       lastDatabaseUpdatedAt = database.updatedAt || "";
       saveLocalCache();
+      updateScheduleStatus();
       renderDays();
       renderErrors();
       updateProgress();
@@ -2286,6 +2473,9 @@
       setDatabaseStatus("connecting");
       await refreshDatabase(true);
       if (databaseMode !== "server") setPersistenceControlsEnabled(false);
+      updateNotificationButton();
+      updateScheduleStatus();
+      scheduleDailyReminders();
 
       window.setInterval(function() {
         refreshDatabase(false);
@@ -2332,6 +2522,207 @@
         percent: ids.length ? Math.round(done / ids.length * 100) : 0,
         complete: ids.length > 0 && done === ids.length
       };
+    }
+
+    function localDateKey(date) {
+      return [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, "0"),
+        String(date.getDate()).padStart(2, "0")
+      ].join("-");
+    }
+
+    function getDailyReminderRecord() {
+      const today = localDateKey(new Date());
+      const targetDay = scheduledDayNumber(new Date());
+      if (!targetDay) return null;
+      let record = reminderSettings.days[today];
+
+      if (!record || Number(record.targetDay) !== targetDay) {
+        record = {
+          targetDay: targetDay,
+          delivered: { morning: false, noon: false, evening: false }
+        };
+        reminderSettings.days[today] = record;
+
+        const retainedDates = Object.keys(reminderSettings.days).sort().slice(-14);
+        Object.keys(reminderSettings.days).forEach(function(date) {
+          if (!retainedDates.includes(date)) delete reminderSettings.days[date];
+        });
+        saveReminderSettings();
+      }
+
+      record.delivered = Object.assign(
+        { morning: false, noon: false, evening: false },
+        record.delivered || {}
+      );
+      return record;
+    }
+
+    function parseLocalDate(dateString) {
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString || "");
+      if (!match) return null;
+      const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function scheduledDayNumber(date) {
+      const start = parseLocalDate(state.courseStartDate);
+      if (!start) return null;
+      const startUtc = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+      const dateUtc = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+      const offset = Math.floor((dateUtc - startUtc) / 86400000);
+      return offset >= 0 && offset < roadmapDays.length ? offset + 1 : null;
+    }
+
+    function updateScheduleStatus() {
+      const input = document.getElementById("courseStartDate");
+      const status = document.getElementById("scheduleStatus");
+      input.value = state.courseStartDate || "";
+
+      const start = parseLocalDate(state.courseStartDate);
+      if (!start) {
+        status.textContent = "Chọn ngày bắt đầu để xếp cố định 1 session mỗi ngày.";
+        return;
+      }
+
+      const todayDay = scheduledDayNumber(new Date());
+      if (todayDay) {
+        const dayData = roadmapDays.find(function(day) { return day.day === todayDay; });
+        status.textContent = "Hôm nay: Session " + todayDay + " — " + dayData.title + ". Nhắc tự động lúc 08:00, 12:00 và 17:00.";
+        return;
+      }
+
+      const today = new Date();
+      if (today < start) {
+        status.textContent = "Khóa học sẽ bắt đầu ngày " + state.courseStartDate + ".";
+      } else {
+        status.textContent = "Lịch 7 session đã kết thúc. Bạn vẫn có thể mở checklist để ôn tập.";
+      }
+    }
+
+    function reminderDayData(record) {
+      return record && roadmapDays.find(function(day) { return day.day === Number(record.targetDay); });
+    }
+
+    function browserNotificationsAvailable() {
+      return "Notification" in window;
+    }
+
+    function updateNotificationButton() {
+      const button = document.getElementById("enableNotifications");
+      if (!browserNotificationsAvailable()) {
+        button.textContent = "Không hỗ trợ";
+        button.disabled = true;
+        return;
+      }
+      if (Notification.permission === "denied") {
+        button.textContent = "Thông báo bị chặn";
+        button.disabled = true;
+        return;
+      }
+      button.disabled = false;
+      button.hidden = reminderSettings.enabled && Notification.permission === "granted";
+    }
+
+    function sendBrowserReminder(title, message, period) {
+      if (!reminderSettings.enabled || !browserNotificationsAvailable()) return;
+      if (Notification.permission !== "granted") return;
+      try {
+        new Notification(title, {
+          body: message,
+          tag: "pccp-daily-" + localDateKey(new Date()) + "-" + period
+        });
+      } catch (error) {
+        console.warn("Không thể hiển thị browser notification.", error);
+      }
+    }
+
+    function deliverDailyReminder(period) {
+      const record = getDailyReminderRecord();
+      const dayData = reminderDayData(record);
+      if (!record || !dayData || record.delivered[period]) return;
+
+      if (period !== "morning" && dayStats(dayData).complete) {
+        record.delivered[period] = true;
+        saveReminderSettings();
+        return;
+      }
+
+      const stats = dayStats(dayData);
+      const remaining = stats.total - stats.done;
+      const titles = {
+        morning: "Session học hôm nay — 08:00",
+        noon: "Nhắc học lúc 12:00",
+        evening: "Nhắc học lúc 17:00"
+      };
+      const message = period === "morning"
+        ? "Session " + String(dayData.day).padStart(2, "0") + " — " + dayData.title + ". " + dayData.topic + "."
+        : "Session " + String(dayData.day).padStart(2, "0") + " — " + dayData.title + " còn " + remaining + " checklist chưa hoàn thành.";
+
+      reminderTargetDay = dayData.day;
+      document.getElementById("reminderTitle").textContent = titles[period];
+      document.getElementById("reminderMessage").textContent = message;
+      document.getElementById("dailyReminder").hidden = false;
+      record.delivered[period] = true;
+      saveReminderSettings();
+      updateNotificationButton();
+      sendBrowserReminder(titles[period], message, period);
+    }
+
+    function millisecondsUntil(hour) {
+      const now = new Date();
+      const target = new Date(now);
+      target.setHours(hour, 0, 0, 0);
+      return target.getTime() - now.getTime();
+    }
+
+    function scheduleDailyReminders() {
+      reminderTimers.forEach(window.clearTimeout);
+      reminderTimers = [];
+
+      const record = getDailyReminderRecord();
+      const dayData = reminderDayData(record);
+      if (!record || !dayData) {
+        reminderTargetDay = null;
+        document.getElementById("dailyReminder").hidden = true;
+        return;
+      }
+
+      const now = new Date();
+      const minutes = now.getHours() * 60 + now.getMinutes();
+      if (minutes >= 17 * 60) {
+        record.delivered.morning = true;
+        record.delivered.noon = true;
+        deliverDailyReminder("evening");
+      } else if (minutes >= 12 * 60) {
+        record.delivered.morning = true;
+        deliverDailyReminder("noon");
+      } else if (minutes >= 8 * 60) {
+        deliverDailyReminder("morning");
+      }
+      saveReminderSettings();
+
+      [
+        { period: "morning", hour: 8 },
+        { period: "noon", hour: 12 },
+        { period: "evening", hour: 17 }
+      ].forEach(function(item) {
+        const delay = millisecondsUntil(item.hour);
+        if (delay > 0 && !record.delivered[item.period]) {
+          reminderTimers.push(window.setTimeout(function() {
+            deliverDailyReminder(item.period);
+          }, delay));
+        }
+      });
+    }
+
+    function hideReminderIfComplete() {
+      const record = reminderSettings.days[localDateKey(new Date())];
+      const dayData = reminderDayData(record);
+      if (dayData && dayStats(dayData).complete) {
+        document.getElementById("dailyReminder").hidden = true;
+      }
     }
 
     function focusMinutes() {
@@ -2533,6 +2924,7 @@
       document.getElementById("weekProgressFill").style.width = percent + "%";
       document.getElementById("mobileProgress").textContent = percent + "% Tuần 1";
       document.getElementById("mobileNext").textContent = nextDay ? "Tiếp theo: Ngày " + String(nextDay.day).padStart(2, "0") : "Tuần 1 hoàn thành";
+      hideReminderIfComplete();
     }
 
     function openDay(dayNumber) {
@@ -2738,6 +3130,10 @@
       if (!confirmed) return;
       state = structuredClone(defaultState);
       saveState({ immediate: true });
+      reminderSettings.days = {};
+      saveReminderSettings();
+      updateScheduleStatus();
+      scheduleDailyReminders();
       renderDays();
       renderErrors();
       updateProgress();
@@ -2746,12 +3142,58 @@
     document.getElementById("continueButton").addEventListener("click", continueLearning);
     document.getElementById("mobileContinue").addEventListener("click", continueLearning);
 
+    document.getElementById("courseScheduleForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+      const startDate = document.getElementById("courseStartDate").value;
+      if (!parseLocalDate(startDate)) return;
+
+      if (state.courseStartDate !== startDate) {
+        state.courseStartDate = startDate;
+        reminderSettings.days = {};
+        saveReminderSettings();
+        document.getElementById("dailyReminder").hidden = true;
+        saveState({ immediate: true });
+      }
+
+      updateScheduleStatus();
+      scheduleDailyReminders();
+    });
+
+    document.getElementById("enableNotifications").addEventListener("click", async function() {
+      if (!browserNotificationsAvailable()) return;
+      const permission = await Notification.requestPermission();
+      reminderSettings.enabled = permission === "granted";
+      saveReminderSettings();
+      updateNotificationButton();
+
+      if (permission === "granted" && !document.getElementById("dailyReminder").hidden) {
+        sendBrowserReminder(
+          document.getElementById("reminderTitle").textContent,
+          document.getElementById("reminderMessage").textContent,
+          "enabled"
+        );
+      }
+    });
+
+    document.getElementById("openReminderDay").addEventListener("click", function() {
+      if (!reminderTargetDay) return;
+      openDay(reminderTargetDay);
+      const card = document.querySelector('[data-day-card="' + reminderTargetDay + '"]');
+      if (card) card.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    document.getElementById("dismissReminder").addEventListener("click", function() {
+      document.getElementById("dailyReminder").hidden = true;
+    });
+
     window.addEventListener("focus", function() {
-      refreshDatabase(false);
+      refreshDatabase(false).then(scheduleDailyReminders);
     });
 
     document.addEventListener("visibilitychange", function() {
-      if (document.visibilityState === "visible") refreshDatabase(false);
+      if (document.visibilityState === "visible") {
+        refreshDatabase(false).then(scheduleDailyReminders);
+      }
     });
 
     window.addEventListener("pagehide", function() {
