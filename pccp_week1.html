@@ -2284,6 +2284,7 @@
 
     const storageKey = "pccp-1000-week-1-v1";
     const reminderStorageKey = "pccp-1000-reminders-v1";
+    const activeWeekStorageKey = "pccp-1000-active-week-v1";
     const defaultState = {
       checked: {},
       notes: {},
@@ -2359,6 +2360,23 @@
         localStorage.setItem(storageKey, JSON.stringify(state));
       } catch (error) {
         console.warn("Không thể cập nhật local cache.", error);
+      }
+    }
+
+    function loadActiveWeek() {
+      try {
+        const week = Number(localStorage.getItem(activeWeekStorageKey));
+        return Number.isInteger(week) && week > 0 ? week : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function saveActiveWeek() {
+      try {
+        localStorage.setItem(activeWeekStorageKey, String(activeWeek));
+      } catch (error) {
+        console.warn("Không thể lưu tuần đang mở.", error);
       }
     }
 
@@ -2514,8 +2532,13 @@
         2: database.checklists.week2
       };
       state = normalizeState(database.progress);
+      const savedWeek = loadActiveWeek();
       const scheduled = scheduledSession(new Date());
-      if (scheduled) activeWeek = scheduled.week;
+      if (savedWeek && Array.isArray(roadmapWeeks[savedWeek]) && roadmapWeeks[savedWeek].length) {
+        activeWeek = savedWeek;
+      } else if (scheduled) {
+        activeWeek = scheduled.week;
+      }
       roadmapDays = roadmapWeeks[activeWeek] || roadmapWeeks[1];
       lastDatabaseUpdatedAt = database.updatedAt || "";
       saveLocalCache();
@@ -3008,6 +3031,7 @@
       const week = Number(weekNumber);
       if (!Array.isArray(roadmapWeeks[week]) || !roadmapWeeks[week].length) return;
       activeWeek = week;
+      saveActiveWeek();
       roadmapDays = roadmapWeeks[week];
       currentFilter = "all";
       document.querySelectorAll(".filter-button").forEach(function(button) {
