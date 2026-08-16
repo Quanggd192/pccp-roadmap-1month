@@ -1,4 +1,4 @@
-# PCCP Roadmap — Week 1
+# PCCP Roadmap — Weeks 1–2
 
 HTML/JavaScript UI with a Node.js server. The server renders pccp_week1.html
 and persists progress in Supabase.
@@ -20,16 +20,24 @@ must open the server URL so the Supabase service-role key remains server-only.
 - Writes are serialized by the Node.js server.
 - The page checks for external changes every three seconds and when the tab
   becomes active.
+- Error Log records are scoped to their week; legacy records without a week
+  are treated as Week 1 and normalized by the Week 2 migration.
 - localStorage is only a display cache, not the source of truth.
 
 Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env before starting the
-server. Run supabase_migration.sql once when provisioning a new database.
+server. Run supabase_migration.sql once when provisioning a new database, then
+run supabase_week2_migration.sql to add Week 2 to an existing project.
+
+Week 2 source content lives in week2_data.json. Regenerate its SQL migration
+after editing the dataset with:
+
+    node scripts/generate_week2_migration.js
 
 ## Daily reminders
 
 - The user selects a course start date, which is stored in Supabase progress.
 - The schedule is fixed to one session per calendar day: the start date is
-  Session 1, the following date is Session 2, and so on through Session 7.
+  Week 1 Day 1, and Week 2 Day 1 starts seven calendar days later.
 - The app schedules the day's content reminder for 08:00 local device time.
 - At 12:00 and 17:00, the app reminds again only when that day's fixed session
   is still incomplete.

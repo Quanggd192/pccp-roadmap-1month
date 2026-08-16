@@ -16,6 +16,7 @@ const host = "127.0.0.1";
 const port = Number(process.env.PORT) || 8000;
 const projectDirectory = __dirname;
 const htmlPath = path.join(projectDirectory, "pccp_week1.html");
+const week2Path = path.join(projectDirectory, "week2_data.json");
 const databaseId = "week1";
 const maxBodySize = 1024 * 1024;
 
@@ -37,7 +38,12 @@ async function readDatabase() {
     .single();
 
   if (error) throw error;
-  return data.document;
+
+  const document = data.document;
+  if (!Array.isArray(document.checklists.week2)) {
+    document.checklists.week2 = JSON.parse(await readFile(week2Path, "utf8"));
+  }
+  return document;
 }
 
 function validateProgress(value) {

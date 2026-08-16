@@ -844,6 +844,38 @@
       margin-bottom: 0;
     }
 
+    .week-controls {
+      display: grid;
+      justify-items: end;
+      gap: 9px;
+    }
+
+    .week-tabs {
+      display: inline-flex;
+      gap: 5px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: var(--surface);
+    }
+
+    .week-tab {
+      min-height: 36px;
+      padding: 0 14px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .week-tab.active {
+      background: var(--yellow);
+      color: #11161d;
+    }
+
     .filters {
       display: inline-flex;
       padding: 4px;
@@ -1422,6 +1454,10 @@
       font-size: 13px;
     }
 
+    .empty-state[hidden] {
+      display: none;
+    }
+
     .footer {
       padding: 30px 0 92px;
       border-top: 1px solid var(--line);
@@ -1590,6 +1626,15 @@
         flex-direction: column;
       }
 
+      .week-controls {
+        justify-items: stretch;
+      }
+
+      .week-tabs,
+      .week-tab {
+        flex: 1;
+      }
+
       .filters {
         overflow-x: auto;
       }
@@ -1685,7 +1730,7 @@
         <a href="#error-log">Error log</a>
       </div>
       <div class="nav-progress" aria-live="polite">
-        Week 01 <strong id="navProgress">0%</strong>
+        <span id="navWeekLabel">Week 01</span> <strong id="navProgress">0%</strong>
       </div>
     </nav>
   </header>
@@ -1693,9 +1738,9 @@
   <main id="top">
     <section class="shell hero" aria-labelledby="hero-title">
       <div>
-        <p class="eyebrow">week_01.py / core patterns</p>
+        <p class="eyebrow" id="heroEyebrow">week_01.py / core patterns</p>
         <h1 id="hero-title">Tuần 1: Nền tảng thuật toán với Python.</h1>
-        <p class="hero-copy">
+        <p class="hero-copy" id="heroCopy">
           HashMap/Set, sorting, prefix sum, two pointers, stack/queue và binary search.
           Mỗi ngày dùng <strong>150 phút</strong> để review pattern, implement và ghi error log.
         </p>
@@ -1750,14 +1795,14 @@
         <div class="terminal-top">
           <div class="terminal-dots" aria-hidden="true"><span></span><span></span><span></span></div>
           <div class="terminal-meta">
-            <span>~/pccp/week_01.py</span>
+            <span id="terminalPath">~/pccp/week_01.py</span>
             <span class="database-status" id="databaseStatus" data-state="connecting">DB_CONNECTING</span>
           </div>
         </div>
         <div class="terminal-body">
-          <p class="week-label">ACTIVE_WEEK = 1</p>
-          <h2>Core patterns</h2>
-          <p class="terminal-description">6 nhóm thuật toán cơ bản · 1 timed mock</p>
+          <p class="week-label" id="activeWeekLabel">ACTIVE_WEEK = 1</p>
+          <h2 id="activeWeekTitle">Core patterns</h2>
+          <p class="terminal-description" id="activeWeekDescription">6 nhóm thuật toán cơ bản · 1 timed mock</p>
           <div class="progress-overview">
             <div class="progress-ring" id="progressRing" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
               <div class="ring-content">
@@ -1782,10 +1827,10 @@
       <div class="section-heading">
         <p class="eyebrow">curriculum / 4 weeks</p>
         <h2 id="roadmap-title">Roadmap thuật toán.</h2>
-        <p>Tuần 1 có checklist chi tiết. Tuần 2–4 hiện hiển thị phạm vi kiến thức.</p>
+        <p>Tuần 1–2 có checklist chi tiết. Tuần 3–4 hiện hiển thị phạm vi kiến thức.</p>
       </div>
       <div class="roadmap-grid">
-        <article class="roadmap-card active">
+        <article class="roadmap-card active" data-roadmap-week="1">
           <div class="roadmap-number"><span>Week 01</span><span class="status-chip">ACTIVE</span></div>
           <h3>Core patterns</h3>
           <p>Lookup, ordering, range query, linear scan, stack/queue và monotonic predicate.</p>
@@ -1794,8 +1839,8 @@
             <span>Prefix Sum</span><span>Stack/Queue</span><span>Binary Search</span>
           </div>
         </article>
-        <article class="roadmap-card">
-          <div class="roadmap-number"><span>Week 02</span><span class="status-chip">QUEUED</span></div>
+        <article class="roadmap-card" data-roadmap-week="2">
+          <div class="roadmap-number"><span>Week 02</span><span class="status-chip">READY</span></div>
           <h3>Traversal & strategy</h3>
           <p>Graph traversal, heap operations, greedy decisions, simulation và state search.</p>
           <div class="topic-list">
@@ -1854,14 +1899,20 @@
     <section class="shell section week-section" id="week-1" aria-labelledby="week-title">
       <div class="week-toolbar">
         <div class="section-heading">
-          <p class="eyebrow">week_01 / checklist</p>
-          <h2 id="week-title">Checklist theo ngày.</h2>
+          <p class="eyebrow" id="weekEyebrow">week_01 / checklist</p>
+          <h2 id="week-title">Checklist Week 1.</h2>
           <p>Theory, implementation và error review được theo dõi độc lập cho từng ngày.</p>
         </div>
-        <div class="filters" role="group" aria-label="Lọc ngày học">
-          <button class="filter-button active" type="button" data-filter="all">Tất cả</button>
-          <button class="filter-button" type="button" data-filter="pending">Chưa xong</button>
-          <button class="filter-button" type="button" data-filter="done">Hoàn thành</button>
+        <div class="week-controls">
+          <div class="week-tabs" role="tablist" aria-label="Chọn tuần học">
+            <button class="week-tab active" type="button" role="tab" aria-selected="true" data-week="1">Week 01</button>
+            <button class="week-tab" type="button" role="tab" aria-selected="false" data-week="2">Week 02</button>
+          </div>
+          <div class="filters" role="group" aria-label="Lọc ngày học">
+            <button class="filter-button active" type="button" data-filter="all">Tất cả</button>
+            <button class="filter-button" type="button" data-filter="pending">Chưa xong</button>
+            <button class="filter-button" type="button" data-filter="done">Hoàn thành</button>
+          </div>
         </div>
       </div>
       <div class="week-progress-bar" role="presentation">
@@ -1874,7 +1925,7 @@
     <section class="shell section" id="error-log" aria-labelledby="error-title">
       <div class="section-heading">
         <p class="eyebrow">review records</p>
-        <h2 id="error-title">Error log.</h2>
+        <h2 id="error-title">Error Log — Week 1.</h2>
         <p>Lưu bài, loại lỗi, root cause, correction rule và ngày reimplement.</p>
       </div>
       <div class="error-layout">
@@ -1917,7 +1968,7 @@
         <div class="error-list-card">
           <div class="error-list-head">
             <div>
-              <h3>Lỗi đã ghi</h3>
+              <h3 id="errorListTitle">Lỗi đã ghi · Week 1</h3>
               <p id="errorCount">0 mục cần review</p>
             </div>
             <button class="button button-ghost" id="resetButton" type="button">Reset tiến độ</button>
@@ -1935,7 +1986,7 @@
   </main>
 
   <footer class="footer">
-    <div class="shell">week_01 · python · 7 days · 71 checklist items</div>
+    <div class="shell" id="footerSummary">week_01 · python · 7 days · 71 checklist items</div>
   </footer>
 
   <div class="mobile-dock" aria-live="polite">
@@ -2222,6 +2273,9 @@
       }
     ];
 
+    let roadmapWeeks = { 1: roadmapDays, 2: [] };
+    let activeWeek = 1;
+
     const groupConfig = {
       theory: { label: "Lý thuyết", minutes: 30 },
       practice: { label: "Bài tập", minutes: 105 },
@@ -2237,7 +2291,9 @@
       courseStartDate: "",
       errors: [],
       mock: { score: "", solved: "", minutes: "", weak: "" },
-      openDays: [1]
+      week2Mock: { score: "", solved: "", minutes: "", weak: "" },
+      openDays: [1],
+      week2OpenDays: [1]
     };
 
     let state = structuredClone(defaultState);
@@ -2254,14 +2310,38 @@
 
     function normalizeState(value) {
       const saved = value && typeof value === "object" ? value : {};
+      const checked = {};
+      Object.entries(saved.checked && typeof saved.checked === "object" ? saved.checked : {}).forEach(function(entry) {
+        const key = entry[0].startsWith("week-") ? entry[0] : "week-1-" + entry[0];
+        checked[key] = entry[1];
+      });
+
+      const notes = {};
+      Object.entries(saved.notes && typeof saved.notes === "object" ? saved.notes : {}).forEach(function(entry) {
+        const key = entry[0].startsWith("week-") ? entry[0] : "week-1-day-" + entry[0];
+        notes[key] = entry[1];
+      });
+
+      const sampleCodes = {};
+      Object.entries(saved.sampleCodes && typeof saved.sampleCodes === "object" ? saved.sampleCodes : {}).forEach(function(entry) {
+        const key = entry[0].startsWith("week-") ? entry[0] : "week-1-" + entry[0];
+        sampleCodes[key] = entry[1];
+      });
+
       return {
-        checked: saved.checked && typeof saved.checked === "object" ? saved.checked : {},
-        notes: saved.notes && typeof saved.notes === "object" ? saved.notes : {},
-        sampleCodes: saved.sampleCodes && typeof saved.sampleCodes === "object" ? saved.sampleCodes : {},
+        checked: checked,
+        notes: notes,
+        sampleCodes: sampleCodes,
         courseStartDate: typeof saved.courseStartDate === "string" ? saved.courseStartDate : "",
-        errors: Array.isArray(saved.errors) ? saved.errors : [],
+        errors: Array.isArray(saved.errors) ? saved.errors.map(function(entry) {
+          return Object.assign({ week: 1 }, entry, {
+            week: Number(entry.week) || 1
+          });
+        }) : [],
         mock: Object.assign({}, defaultState.mock, saved.mock || {}),
-        openDays: Array.isArray(saved.openDays) ? saved.openDays : [1]
+        week2Mock: Object.assign({}, defaultState.week2Mock, saved.week2Mock || {}),
+        openDays: Array.isArray(saved.openDays) ? saved.openDays : [1],
+        week2OpenDays: Array.isArray(saved.week2OpenDays) ? saved.week2OpenDays : [1]
       };
     }
 
@@ -2357,6 +2437,7 @@
         database.version === 1 &&
         database.checklists &&
         Array.isArray(database.checklists.week1) &&
+        Array.isArray(database.checklists.week2) &&
         database.progress &&
         typeof database.progress === "object"
       );
@@ -2428,11 +2509,18 @@
 
     function applyDatabase(database) {
       if (!validateDatabase(database)) throw new Error("Cấu trúc JSON database không hợp lệ.");
-      roadmapDays = database.checklists.week1;
+      roadmapWeeks = {
+        1: database.checklists.week1,
+        2: database.checklists.week2
+      };
       state = normalizeState(database.progress);
+      const scheduled = scheduledSession(new Date());
+      if (scheduled) activeWeek = scheduled.week;
+      roadmapDays = roadmapWeeks[activeWeek] || roadmapWeeks[1];
       lastDatabaseUpdatedAt = database.updatedAt || "";
       saveLocalCache();
       updateScheduleStatus();
+      updateWeekUI();
       renderDays();
       renderErrors();
       updateProgress();
@@ -2467,6 +2555,7 @@
 
     async function initializeApp() {
       state = loadLocalState();
+      updateWeekUI();
       renderDays();
       renderErrors();
       updateProgress();
@@ -2491,30 +2580,50 @@
         .replaceAll("'", "&#039;");
     }
 
-    function taskId(day, group, index) {
-      return "day-" + day + "-" + group + "-" + index;
+    function taskId(day, group, index, weekNumber) {
+      return "week-" + (weekNumber || activeWeek) + "-day-" + day + "-" + group + "-" + index;
     }
 
-    function sampleCodeId(day, index) {
-      return "day-" + day + "-sample-" + index;
+    function sampleCodeId(day, index, weekNumber) {
+      return "week-" + (weekNumber || activeWeek) + "-day-" + day + "-sample-" + index;
     }
 
-    function taskIdsForDay(dayData) {
+    function noteId(day, weekNumber) {
+      return "week-" + (weekNumber || activeWeek) + "-day-" + day;
+    }
+
+    function openDaysForWeek(weekNumber) {
+      return Number(weekNumber || activeWeek) === 1 ? state.openDays : state.week2OpenDays;
+    }
+
+    function setOpenDaysForWeek(days, weekNumber) {
+      if (Number(weekNumber || activeWeek) === 1) state.openDays = days;
+      else state.week2OpenDays = days;
+    }
+
+    function mockForWeek(weekNumber) {
+      return Number(weekNumber || activeWeek) === 1 ? state.mock : state.week2Mock;
+    }
+
+    function taskIdsForDay(dayData, weekNumber) {
       const ids = [];
       Object.keys(groupConfig).forEach(function(group) {
         dayData[group].forEach(function(_, index) {
-          ids.push(taskId(dayData.day, group, index));
+          ids.push(taskId(dayData.day, group, index, weekNumber));
         });
       });
       return ids;
     }
 
-    function allTaskIds() {
-      return roadmapDays.flatMap(taskIdsForDay);
+    function allTaskIds(weekNumber) {
+      const week = Number(weekNumber || activeWeek);
+      return (roadmapWeeks[week] || []).flatMap(function(day) {
+        return taskIdsForDay(day, week);
+      });
     }
 
-    function dayStats(dayData) {
-      const ids = taskIdsForDay(dayData);
+    function dayStats(dayData, weekNumber) {
+      const ids = taskIdsForDay(dayData, weekNumber || activeWeek);
       const done = ids.filter(function(id) { return Boolean(state.checked[id]); }).length;
       return {
         done: done,
@@ -2534,13 +2643,14 @@
 
     function getDailyReminderRecord() {
       const today = localDateKey(new Date());
-      const targetDay = scheduledDayNumber(new Date());
-      if (!targetDay) return null;
+      const session = scheduledSession(new Date());
+      if (!session) return null;
       let record = reminderSettings.days[today];
 
-      if (!record || Number(record.targetDay) !== targetDay) {
+      if (!record || Number(record.targetWeek) !== session.week || Number(record.targetDay) !== session.day) {
         record = {
-          targetDay: targetDay,
+          targetWeek: session.week,
+          targetDay: session.day,
           delivered: { morning: false, noon: false, evening: false }
         };
         reminderSettings.days[today] = record;
@@ -2566,13 +2676,25 @@
       return Number.isNaN(date.getTime()) ? null : date;
     }
 
-    function scheduledDayNumber(date) {
+    function allScheduledSessions() {
+      return Object.keys(roadmapWeeks)
+        .map(Number)
+        .sort(function(left, right) { return left - right; })
+        .flatMap(function(week) {
+          return (roadmapWeeks[week] || []).map(function(dayData) {
+            return { week: week, day: dayData.day, data: dayData };
+          });
+        });
+    }
+
+    function scheduledSession(date) {
       const start = parseLocalDate(state.courseStartDate);
       if (!start) return null;
       const startUtc = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
       const dateUtc = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
       const offset = Math.floor((dateUtc - startUtc) / 86400000);
-      return offset >= 0 && offset < roadmapDays.length ? offset + 1 : null;
+      const sessions = allScheduledSessions();
+      return offset >= 0 && offset < sessions.length ? sessions[offset] : null;
     }
 
     function updateScheduleStatus() {
@@ -2586,10 +2708,9 @@
         return;
       }
 
-      const todayDay = scheduledDayNumber(new Date());
-      if (todayDay) {
-        const dayData = roadmapDays.find(function(day) { return day.day === todayDay; });
-        status.textContent = "Hôm nay: Session " + todayDay + " — " + dayData.title + ". Nhắc tự động lúc 08:00, 12:00 và 17:00.";
+      const session = scheduledSession(new Date());
+      if (session) {
+        status.textContent = "Hôm nay: Week " + session.week + " · Day " + session.day + " — " + session.data.title + ". Nhắc tự động lúc 08:00, 12:00 và 17:00.";
         return;
       }
 
@@ -2597,12 +2718,14 @@
       if (today < start) {
         status.textContent = "Khóa học sẽ bắt đầu ngày " + state.courseStartDate + ".";
       } else {
-        status.textContent = "Lịch 7 session đã kết thúc. Bạn vẫn có thể mở checklist để ôn tập.";
+        status.textContent = "Lịch " + allScheduledSessions().length + " session đã kết thúc. Bạn vẫn có thể mở checklist để ôn tập.";
       }
     }
 
     function reminderDayData(record) {
-      return record && roadmapDays.find(function(day) { return day.day === Number(record.targetDay); });
+      return record && (roadmapWeeks[Number(record.targetWeek)] || []).find(function(day) {
+        return day.day === Number(record.targetDay);
+      });
     }
 
     function browserNotificationsAvailable() {
@@ -2643,13 +2766,13 @@
       const dayData = reminderDayData(record);
       if (!record || !dayData || record.delivered[period]) return;
 
-      if (period !== "morning" && dayStats(dayData).complete) {
+      if (period !== "morning" && dayStats(dayData, record.targetWeek).complete) {
         record.delivered[period] = true;
         saveReminderSettings();
         return;
       }
 
-      const stats = dayStats(dayData);
+      const stats = dayStats(dayData, record.targetWeek);
       const remaining = stats.total - stats.done;
       const titles = {
         morning: "Session học hôm nay — 08:00",
@@ -2657,10 +2780,10 @@
         evening: "Nhắc học lúc 17:00"
       };
       const message = period === "morning"
-        ? "Session " + String(dayData.day).padStart(2, "0") + " — " + dayData.title + ". " + dayData.topic + "."
-        : "Session " + String(dayData.day).padStart(2, "0") + " — " + dayData.title + " còn " + remaining + " checklist chưa hoàn thành.";
+        ? "Week " + record.targetWeek + " · Day " + dayData.day + " — " + dayData.title + ". " + dayData.topic + "."
+        : "Week " + record.targetWeek + " · Day " + dayData.day + " — " + dayData.title + " còn " + remaining + " checklist chưa hoàn thành.";
 
-      reminderTargetDay = dayData.day;
+      reminderTargetDay = { week: Number(record.targetWeek), day: dayData.day };
       document.getElementById("reminderTitle").textContent = titles[period];
       document.getElementById("reminderMessage").textContent = message;
       document.getElementById("dailyReminder").hidden = false;
@@ -2720,7 +2843,7 @@
     function hideReminderIfComplete() {
       const record = reminderSettings.days[localDateKey(new Date())];
       const dayData = reminderDayData(record);
-      if (dayData && dayStats(dayData).complete) {
+      if (dayData && dayStats(dayData, record.targetWeek).complete) {
         document.getElementById("dailyReminder").hidden = true;
       }
     }
@@ -2781,7 +2904,7 @@
         const modified = Object.prototype.hasOwnProperty.call(state.sampleCodes, id);
         const code = modified ? state.sampleCodes[id] : sample.code;
         samplesMarkup +=
-          '<details class="code-sample" data-sample-day="' + dayData.day + '" data-sample-index="' + index + '">' +
+          '<details class="code-sample" data-sample-week="' + activeWeek + '" data-sample-day="' + dayData.day + '" data-sample-index="' + index + '">' +
             "<summary>" + escapeHtml(sample.title) + "</summary>" +
             '<div class="code-sample-view" data-sample-view>' +
               '<div class="code-sample-actions">' +
@@ -2809,8 +2932,8 @@
       );
     }
 
-    function originalSampleCode(dayNumber, sampleIndex) {
-      const dayData = roadmapDays.find(function(day) { return day.day === dayNumber; });
+    function originalSampleCode(dayNumber, sampleIndex, weekNumber) {
+      const dayData = (roadmapWeeks[Number(weekNumber || activeWeek)] || []).find(function(day) { return day.day === dayNumber; });
       if (!dayData) return "";
       const samples = Array.isArray(dayData.samples) && dayData.samples.length
         ? dayData.samples
@@ -2832,18 +2955,68 @@
     }
 
     function renderMockPanel() {
+      const mock = mockForWeek();
       return (
         '<div class="mock-panel" aria-label="Kết quả mock test">' +
           '<div class="field"><label for="mockScore">Điểm mock</label>' +
-            '<input id="mockScore" data-mock="score" type="number" min="0" max="1000" placeholder="Nhập điểm" value="' + escapeHtml(state.mock.score) + '"></div>' +
+            '<input id="mockScore" data-mock="score" type="number" min="0" max="1000" placeholder="Nhập điểm" value="' + escapeHtml(mock.score) + '"></div>' +
           '<div class="field"><label for="mockSolved">Số câu hoàn thành</label>' +
-            '<input id="mockSolved" data-mock="solved" type="number" min="0" placeholder="Ví dụ: 3" value="' + escapeHtml(state.mock.solved) + '"></div>' +
+            '<input id="mockSolved" data-mock="solved" type="number" min="0" placeholder="Ví dụ: 3" value="' + escapeHtml(mock.solved) + '"></div>' +
           '<div class="field"><label for="mockMinutes">Thời gian</label>' +
-            '<input id="mockMinutes" data-mock="minutes" type="number" min="0" placeholder="Số phút" value="' + escapeHtml(state.mock.minutes) + '"></div>' +
+            '<input id="mockMinutes" data-mock="minutes" type="number" min="0" placeholder="Số phút" value="' + escapeHtml(mock.minutes) + '"></div>' +
           '<div class="field"><label for="mockWeak">2 dạng yếu nhất</label>' +
-            '<input id="mockWeak" data-mock="weak" placeholder="Graph, Binary Search..." value="' + escapeHtml(state.mock.weak) + '"></div>' +
+            '<input id="mockWeak" data-mock="weak" placeholder="Graph, Binary Search..." value="' + escapeHtml(mock.weak) + '"></div>' +
         "</div>"
       );
+    }
+
+    function updateWeekUI() {
+      const metadata = activeWeek === 1
+        ? { title: "Core patterns", description: "6 nhóm thuật toán cơ bản · 1 timed mock" }
+        : { title: "Traversal & strategy", description: "DFS/BFS · graph · heap · greedy · simulation · backtracking" };
+
+      document.getElementById("navWeekLabel").textContent = "Week " + String(activeWeek).padStart(2, "0");
+      document.getElementById("activeWeekLabel").textContent = "ACTIVE_WEEK = " + activeWeek;
+      document.getElementById("activeWeekTitle").textContent = metadata.title;
+      document.getElementById("activeWeekDescription").textContent = metadata.description;
+      document.getElementById("weekEyebrow").textContent = "week_" + String(activeWeek).padStart(2, "0") + " / checklist";
+      document.getElementById("week-title").textContent = "Checklist Week " + activeWeek + ".";
+
+      document.getElementById("heroEyebrow").textContent = "week_" + String(activeWeek).padStart(2, "0") + ".py / " + metadata.title.toLowerCase();
+      document.getElementById("hero-title").textContent = activeWeek === 1
+        ? "Tuần 1: Nền tảng thuật toán với Python."
+        : "Tuần 2: Traversal và chiến lược giải bài.";
+      document.getElementById("heroCopy").textContent = activeWeek === 1
+        ? "HashMap/Set, sorting, prefix sum, two pointers, stack/queue và binary search. Mỗi ngày dành 150 phút để review pattern, implement và ghi error log."
+        : "DFS/BFS, graph, heap, greedy, simulation và backtracking. Mỗi ngày một session cố định để luyện nhận diện pattern và implementation."
+      document.getElementById("terminalPath").textContent = "~/pccp/week_" + String(activeWeek).padStart(2, "0") + ".py";
+      document.getElementById("footerSummary").textContent = "week_" + String(activeWeek).padStart(2, "0") + " · python · 7 days · " + allTaskIds(activeWeek).length + " checklist items";
+
+      document.querySelectorAll(".week-tab[data-week]").forEach(function(button) {
+        const selected = Number(button.dataset.week) === activeWeek;
+        button.classList.toggle("active", selected);
+        button.setAttribute("aria-selected", String(selected));
+      });
+      document.querySelectorAll("[data-roadmap-week]").forEach(function(card) {
+        const selected = Number(card.dataset.roadmapWeek) === activeWeek;
+        card.classList.toggle("active", selected);
+        card.querySelector(".status-chip").textContent = selected ? "ACTIVE" : "READY";
+      });
+    }
+
+    function setActiveWeek(weekNumber) {
+      const week = Number(weekNumber);
+      if (!Array.isArray(roadmapWeeks[week]) || !roadmapWeeks[week].length) return;
+      activeWeek = week;
+      roadmapDays = roadmapWeeks[week];
+      currentFilter = "all";
+      document.querySelectorAll(".filter-button").forEach(function(button) {
+        button.classList.toggle("active", button.dataset.filter === "all");
+      });
+      updateWeekUI();
+      renderDays();
+      renderErrors();
+      updateProgress();
     }
 
     function renderDays() {
@@ -2852,11 +3025,11 @@
 
       roadmapDays.forEach(function(dayData) {
         const stats = dayStats(dayData);
-        const open = state.openDays.includes(dayData.day);
+        const open = openDaysForWeek().includes(dayData.day);
         const completeClass = stats.complete ? " complete" : "";
 
         markup +=
-          '<article class="day-card' + completeClass + '" data-day-card="' + dayData.day + '" data-complete="' + stats.complete + '">' +
+          '<article class="day-card' + completeClass + '" data-week="' + activeWeek + '" data-day-card="' + dayData.day + '" data-complete="' + stats.complete + '">' +
             '<button class="day-toggle" type="button" aria-expanded="' + open + '" aria-controls="day-content-' + dayData.day + '" data-toggle-day="' + dayData.day + '">' +
               '<span class="day-number">' + (stats.complete ? "✓" : String(dayData.day).padStart(2, "0")) + "</span>" +
               '<span class="day-heading"><strong>' + escapeHtml(dayData.title) + "</strong><span>" + escapeHtml(dayData.topic) + "</span></span>" +
@@ -2878,8 +3051,8 @@
               "</div>" +
               (dayData.mock ? renderMockPanel() : "") +
               '<div class="day-note field">' +
-                '<label for="note-' + dayData.day + '">Ghi chú cuối ngày</label>' +
-                '<textarea id="note-' + dayData.day + '" data-note-day="' + dayData.day + '" placeholder="Điều đã hiểu, điều cần làm lại...">' + escapeHtml(state.notes[dayData.day] || "") + "</textarea>" +
+                '<label for="note-' + activeWeek + '-' + dayData.day + '">Ghi chú cuối ngày</label>' +
+                '<textarea id="note-' + activeWeek + '-' + dayData.day + '" data-note-day="' + dayData.day + '" placeholder="Điều đã hiểu, điều cần làm lại...">' + escapeHtml(state.notes[noteId(dayData.day)] || "") + "</textarea>" +
               "</div>" +
             "</div>" +
           "</article>";
@@ -2909,7 +3082,7 @@
       const percent = ids.length ? Math.round(done / ids.length * 100) : 0;
       const completeDays = roadmapDays.filter(function(day) { return dayStats(day).complete; }).length;
       const nextDay = roadmapDays.find(function(day) { return !dayStats(day).complete; });
-      const nextLabel = nextDay ? "Ngày " + String(nextDay.day).padStart(2, "0") + " — " + nextDay.title : "Tuần 1 đã hoàn thành";
+      const nextLabel = nextDay ? "Ngày " + String(nextDay.day).padStart(2, "0") + " — " + nextDay.title : "Tuần " + activeWeek + " đã hoàn thành";
       const hours = focusMinutes() / 60;
       const hoursLabel = hours < 10 ? hours.toFixed(1) + "h" : Math.round(hours) + "h";
 
@@ -2917,13 +3090,13 @@
       document.getElementById("heroProgress").textContent = percent + "%";
       document.getElementById("progressRing").style.setProperty("--progress", percent * 3.6 + "deg");
       document.getElementById("progressRing").setAttribute("aria-valuenow", String(percent));
-      document.getElementById("daysDone").textContent = completeDays + " / 7";
+      document.getElementById("daysDone").textContent = completeDays + " / " + roadmapDays.length;
       document.getElementById("tasksDone").textContent = done + " / " + ids.length;
       document.getElementById("focusTime").textContent = hoursLabel;
       document.getElementById("nextTaskLabel").textContent = nextLabel;
       document.getElementById("weekProgressFill").style.width = percent + "%";
-      document.getElementById("mobileProgress").textContent = percent + "% Tuần 1";
-      document.getElementById("mobileNext").textContent = nextDay ? "Tiếp theo: Ngày " + String(nextDay.day).padStart(2, "0") : "Tuần 1 hoàn thành";
+      document.getElementById("mobileProgress").textContent = percent + "% Tuần " + activeWeek;
+      document.getElementById("mobileNext").textContent = nextDay ? "Tiếp theo: Ngày " + String(nextDay.day).padStart(2, "0") : "Tuần " + activeWeek + " hoàn thành";
       hideReminderIfComplete();
     }
 
@@ -2934,19 +3107,20 @@
       const content = card.querySelector(".day-content");
       button.setAttribute("aria-expanded", "true");
       content.hidden = false;
-      if (!state.openDays.includes(dayNumber)) state.openDays.push(dayNumber);
+      const openDays = openDaysForWeek();
+      if (!openDays.includes(dayNumber)) setOpenDaysForWeek(openDays.concat(dayNumber));
       saveState({ database: false });
     }
 
     function continueLearning() {
-      const nextDay = roadmapDays.find(function(day) { return !dayStats(day).complete; }) || roadmapDays[6];
-      currentFilter = "all";
-      document.querySelectorAll(".filter-button").forEach(function(button) {
-        button.classList.toggle("active", button.dataset.filter === "all");
-      });
-      applyFilter();
-      openDay(nextDay.day);
-      const card = document.querySelector('[data-day-card="' + nextDay.day + '"]');
+      const scheduled = scheduledSession(new Date());
+      const target = scheduled || allScheduledSessions().find(function(session) {
+        return !dayStats(session.data, session.week).complete;
+      }) || allScheduledSessions().at(-1);
+      if (!target) return;
+      setActiveWeek(target.week);
+      openDay(target.day);
+      const card = document.querySelector('[data-day-card="' + target.day + '"]');
       card.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
@@ -2966,11 +3140,16 @@
     function renderErrors() {
       const list = document.getElementById("errorList");
       const empty = document.getElementById("errorEmpty");
+      const weekErrors = state.errors.filter(function(entry) {
+        return Number(entry.week) === activeWeek;
+      });
       list.innerHTML = "";
-      empty.hidden = state.errors.length > 0;
-      document.getElementById("errorCount").textContent = state.errors.length + " mục cần review";
+      empty.hidden = weekErrors.length > 0;
+      document.getElementById("error-title").textContent = "Error Log — Week " + activeWeek + ".";
+      document.getElementById("errorListTitle").textContent = "Lỗi đã ghi · Week " + activeWeek;
+      document.getElementById("errorCount").textContent = weekErrors.length + " mục cần review";
 
-      state.errors.forEach(function(entry) {
+      weekErrors.forEach(function(entry) {
         const article = document.createElement("article");
         article.className = "error-entry";
 
@@ -2983,6 +3162,11 @@
         const category = document.createElement("span");
         category.textContent = entry.category;
         meta.appendChild(category);
+        if (entry.week) {
+          const session = document.createElement("span");
+          session.textContent = "Week " + entry.week + (entry.day ? " · Day " + entry.day : "");
+          meta.appendChild(session);
+        }
         if (entry.reviewDate) {
           const review = document.createElement("span");
           review.textContent = "Làm lại: " + entry.reviewDate;
@@ -3014,9 +3198,10 @@
       );
       if (sampleAction) {
         const sample = sampleAction.closest("[data-sample-day]");
+        const sampleWeek = Number(sample.dataset.sampleWeek || activeWeek);
         const dayNumber = Number(sample.dataset.sampleDay);
         const sampleIndex = Number(sample.dataset.sampleIndex);
-        const id = sampleCodeId(dayNumber, sampleIndex);
+        const id = sampleCodeId(dayNumber, sampleIndex, sampleWeek);
         const input = sample.querySelector("[data-sample-input]");
 
         if (sampleAction.matches("[data-edit-sample]")) {
@@ -3025,13 +3210,13 @@
           input.value = sample.querySelector("[data-sample-code]").textContent;
           setSampleEditorOpen(sample, false);
         } else if (sampleAction.matches("[data-reset-sample]")) {
-          const originalCode = originalSampleCode(dayNumber, sampleIndex);
+          const originalCode = originalSampleCode(dayNumber, sampleIndex, sampleWeek);
           delete state.sampleCodes[id];
           updateSampleDisplay(sample, originalCode, false);
           setSampleEditorOpen(sample, false);
           saveState({ immediate: true });
         } else {
-          const originalCode = originalSampleCode(dayNumber, sampleIndex);
+          const originalCode = originalSampleCode(dayNumber, sampleIndex, sampleWeek);
           const code = input.value;
           const modified = code !== originalCode;
           if (modified) state.sampleCodes[id] = code;
@@ -3050,9 +3235,10 @@
       const isOpen = toggle.getAttribute("aria-expanded") === "true";
       toggle.setAttribute("aria-expanded", String(!isOpen));
       content.hidden = isOpen;
-      state.openDays = isOpen
-        ? state.openDays.filter(function(day) { return day !== dayNumber; })
-        : Array.from(new Set(state.openDays.concat(dayNumber)));
+      const openDays = openDaysForWeek();
+      setOpenDaysForWeek(isOpen
+        ? openDays.filter(function(day) { return day !== dayNumber; })
+        : Array.from(new Set(openDays.concat(dayNumber))));
       saveState({ database: false });
     });
 
@@ -3068,22 +3254,22 @@
       }
 
       if (event.target.matches("[data-note-day]")) {
-        state.notes[event.target.dataset.noteDay] = event.target.value;
+        state.notes[noteId(event.target.dataset.noteDay)] = event.target.value;
         saveState({ immediate: true });
       }
       if (event.target.matches("[data-mock]")) {
-        state.mock[event.target.dataset.mock] = event.target.value;
+        mockForWeek()[event.target.dataset.mock] = event.target.value;
         saveState({ immediate: true });
       }
     });
 
     document.getElementById("days").addEventListener("input", function(event) {
       if (event.target.matches("[data-note-day]")) {
-        state.notes[event.target.dataset.noteDay] = event.target.value;
+        state.notes[noteId(event.target.dataset.noteDay)] = event.target.value;
         saveState();
       }
       if (event.target.matches("[data-mock]")) {
-        state.mock[event.target.dataset.mock] = event.target.value;
+        mockForWeek()[event.target.dataset.mock] = event.target.value;
         saveState();
       }
     });
@@ -3098,11 +3284,23 @@
       });
     });
 
+    document.querySelectorAll(".week-tab").forEach(function(button) {
+      button.addEventListener("click", function() {
+        setActiveWeek(Number(button.dataset.week));
+      });
+    });
+
     document.getElementById("errorForm").addEventListener("submit", function(event) {
       event.preventDefault();
       const form = new FormData(event.currentTarget);
+      const currentSession = scheduledSession(new Date());
+      const errorDay = currentSession && currentSession.week === activeWeek
+        ? currentSession.day
+        : (roadmapDays.find(function(day) { return !dayStats(day).complete; }) || roadmapDays[0]).day;
       const entry = {
         id: String(Date.now()),
+        week: activeWeek,
+        day: errorDay,
         problem: String(form.get("problem") || "").trim(),
         category: String(form.get("category") || ""),
         reviewDate: String(form.get("reviewDate") || ""),
@@ -3126,7 +3324,7 @@
     });
 
     document.getElementById("resetButton").addEventListener("click", function() {
-      const confirmed = window.confirm("Reset toàn bộ checklist, sample code đã sửa, ghi chú, mock result và error log của Tuần 1?");
+      const confirmed = window.confirm("Reset toàn bộ checklist, sample code đã sửa, ghi chú, mock result, lịch học và error log của cả khóa học?");
       if (!confirmed) return;
       state = structuredClone(defaultState);
       saveState({ immediate: true });
@@ -3177,8 +3375,9 @@
 
     document.getElementById("openReminderDay").addEventListener("click", function() {
       if (!reminderTargetDay) return;
-      openDay(reminderTargetDay);
-      const card = document.querySelector('[data-day-card="' + reminderTargetDay + '"]');
+      setActiveWeek(reminderTargetDay.week);
+      openDay(reminderTargetDay.day);
+      const card = document.querySelector('[data-day-card="' + reminderTargetDay.day + '"]');
       if (card) card.scrollIntoView({ behavior: "smooth", block: "start" });
     });
 

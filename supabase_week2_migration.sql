@@ -1,0 +1,102 @@
+-- Add Week 2 and namespace existing Week 1 progress keys.
+-- Safe to run more than once. Existing Week 2 checklist data is preserved.
+
+begin;
+
+with source as (
+  select
+    id,
+    document,
+    coalesce(document -> 'progress', '{}'::jsonb) as progress
+  from public.pccp_databases
+  where id = 'week1'
+),
+migrated as (
+  select
+    id,
+    case
+      when jsonb_typeof(document #> '{checklists,week2}') = 'array'
+        then document #> '{checklists,week2}'
+      else $week2_json$[{"day":1,"title":"DFS / BFS cơ bản","topic":"grid traversal · graph traversal · visited · deque","recognition":"Thấy vùng liên thông, lan truyền theo bước, số đảo hoặc khoảng cách ngắn nhất không trọng số → mô hình hóa neighbor rồi chọn DFS/BFS.","code":"from collections import deque\n\ndirections = [(1, 0), (-1, 0), (0, 1), (0, -1)]\nqueue = deque([(start_row, start_col)])","samples":[{"title":"DFS trên grid","code":"def dfs(row, col):\n    if not (0 <= row < rows and 0 <= col < cols):\n        return\n    if grid[row][col] != '1':\n        return\n    grid[row][col] = '0'\n    for dr, dc in directions:\n        dfs(row + dr, col + dc)"},{"title":"BFS trên grid","code":"from collections import deque\n\nqueue = deque([(start_row, start_col)])\nvisited = {(start_row, start_col)}\nwhile queue:\n    row, col = queue.popleft()\n    for dr, dc in directions:\n        nxt = (row + dr, col + dc)\n        if valid(nxt) and nxt not in visited:\n            visited.add(nxt)\n            queue.append(nxt)"},{"title":"Đếm connected components","code":"components = 0\nfor row in range(rows):\n    for col in range(cols):\n        if grid[row][col] == '1':\n            components += 1\n            dfs(row, col)"},{"title":"Multi-source BFS","code":"queue = deque(all_sources)\nminutes = 0\nwhile queue:\n    for _ in range(len(queue)):\n        row, col = queue.popleft()\n        spread_from(row, col, queue)\n    minutes += 1"}],"theory":["Viết neighbor rule và boundary check trước khi traversal","Phân biệt visited set với đánh dấu trực tiếp trên grid","Dùng DFS cho component, BFS cho level và shortest path không trọng số","Hiểu multi-source BFS khi nhiều nguồn lan truyền đồng thời"],"practice":["Number of Islands #200","Max Area of Island #695","Flood Fill #733","Rotting Oranges #994"],"error":["Ghi lại một lỗi boundary hoặc visited khiến node bị xử lý lặp","So sánh DFS và BFS cho bài khó nhất hôm nay"]},{"day":2,"title":"Graph","topic":"adjacency list · component · cycle · topological sort","recognition":"Khi input mô tả quan hệ giữa các thực thể, hãy dựng adjacency list, xác định graph có hướng/vô hướng rồi chọn traversal hoặc cycle detection.","code":"from collections import defaultdict\n\ngraph = defaultdict(list)\nfor source, target in edges:\n    graph[source].append(target)","samples":[{"title":"Adjacency list","code":"from collections import defaultdict\n\ngraph = defaultdict(list)\nfor left, right in edges:\n    graph[left].append(right)\n    graph[right].append(left)"},{"title":"Path exists","code":"def has_path(graph, source, target):\n    stack = [source]\n    visited = {source}\n    while stack:\n        node = stack.pop()\n        if node == target:\n            return True\n        for neighbor in graph[node]:\n            if neighbor not in visited:\n                visited.add(neighbor)\n                stack.append(neighbor)\n    return False"},{"title":"Clone graph","code":"def clone(node, copies):\n    if node in copies:\n        return copies[node]\n    copies[node] = Node(node.val)\n    copies[node].neighbors = [clone(nxt, copies) for nxt in node.neighbors]\n    return copies[node]"},{"title":"Kahn topological sort","code":"queue = deque(node for node in nodes if indegree[node] == 0)\nvisited = 0\nwhile queue:\n    node = queue.popleft()\n    visited += 1\n    for neighbor in graph[node]:\n        indegree[neighbor] -= 1\n        if indegree[neighbor] == 0:\n            queue.append(neighbor)\nhas_cycle = visited != len(nodes)"}],"theory":["Dựng adjacency list cho graph có hướng và vô hướng","Dùng visited để tránh lặp và đếm connected component","Phát hiện cycle bằng DFS color hoặc Kahn indegree","Hiểu topological order chỉ tồn tại trên DAG"],"practice":["Clone Graph #133","Find if Path Exists in Graph #1971","Course Schedule #207","Number of Provinces #547"],"error":["Ghi rõ graph có hướng hay vô hướng trước khi thêm edge","Tạo test case nhỏ nhất có cycle để kiểm tra implementation"]},{"day":3,"title":"Heap / Priority Queue","topic":"heapq · Top K · min/max heap · scheduling","recognition":"Cần liên tục lấy phần tử nhỏ/lớn nhất, giữ Top K hoặc xử lý theo độ ưu tiên → dùng heap thay vì sort lại toàn bộ.","code":"import heapq\n\nheap = []\nheapq.heappush(heap, value)\nsmallest = heapq.heappop(heap)","samples":[{"title":"Min heap · heapq","code":"import heapq\n\nheap = list(values)\nheapq.heapify(heap)\nsmallest = heapq.heappop(heap)"},{"title":"Max heap bằng số âm","code":"max_heap = [-value for value in values]\nheapq.heapify(max_heap)\nlargest = -heapq.heappop(max_heap)"},{"title":"Giữ K phần tử lớn nhất","code":"heap = []\nfor value in values:\n    heapq.heappush(heap, value)\n    if len(heap) > k:\n        heapq.heappop(heap)\nanswer = heap[0]"},{"title":"K closest points","code":"heap = []\nfor x, y in points:\n    distance = x * x + y * y\n    heapq.heappush(heap, (-distance, x, y))\n    if len(heap) > k:\n        heapq.heappop(heap)\nreturn [[x, y] for _, x, y in heap]"}],"theory":["Ôn heappush, heappop, heapify và heappushpop","Python heapq là min-heap; dùng số âm để mô phỏng max-heap","Giữ heap kích thước K để đạt O(n log K)","Đưa tuple vào heap để biểu diễn priority và tie-breaker"],"practice":["Kth Largest Element in an Array #215","Top K Frequent Elements #347","Last Stone Weight #1046","K Closest Points to Origin #973"],"error":["Ghi lại trường hợp chọn nhầm min-heap hoặc max-heap","So sánh complexity giữa heap K phần tử và sort toàn bộ"]},{"day":4,"title":"Greedy","topic":"local optimum · invariant · sort then select","recognition":"Nếu lựa chọn tốt nhất hiện tại không làm mất nghiệm tối ưu tương lai, hãy tìm invariant hoặc exchange argument trước khi code greedy.","code":"items.sort(key=lambda item: item.end)\nchosen = []\nfor item in items:\n    if compatible(item, chosen):\n        chosen.append(item)","samples":[{"title":"Jump Game","code":"farthest = 0\nfor index, jump in enumerate(nums):\n    if index > farthest:\n        return False\n    farthest = max(farthest, index + jump)\nreturn True"},{"title":"Gas Station","code":"total = tank = start = 0\nfor index, (fuel, cost) in enumerate(zip(gas, costs)):\n    gain = fuel - cost\n    total += gain\n    tank += gain\n    if tank < 0:\n        start = index + 1\n        tank = 0\nreturn start if total >= 0 else -1"},{"title":"Partition Labels","code":"last = {char: index for index, char in enumerate(text)}\nstart = end = 0\nanswer = []\nfor index, char in enumerate(text):\n    end = max(end, last[char])\n    if index == end:\n        answer.append(end - start + 1)\n        start = index + 1"},{"title":"Interval scheduling","code":"intervals.sort(key=lambda item: item[1])\nkept = 0\nend = float('-inf')\nfor start, finish in intervals:\n    if start >= end:\n        kept += 1\n        end = finish"}],"theory":["Xác định local choice và invariant trước khi implement","Dùng sort để đưa lựa chọn greedy về một thứ tự rõ ràng","Thử exchange argument để giải thích vì sao lựa chọn không làm mất optimal","Phân biệt greedy với DP khi lựa chọn hiện tại ảnh hưởng nhiều state tương lai"],"practice":["Jump Game #55","Gas Station #134","Partition Labels #763","Non-overlapping Intervals #435"],"error":["Viết một câu chứng minh invariant cho mỗi lời giải greedy","Ghi lại một counterexample cho chiến lược greedy sai"]},{"day":5,"title":"Simulation + State","topic":"state transition · coordinate · direction · simultaneous update","recognition":"Bài mô phỏng thường không cần thuật toán khó; độ khó nằm ở biểu diễn state, thứ tự cập nhật, boundary và direction.","code":"directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]\ndirection = 0\nrow += directions[direction][0]\ncol += directions[direction][1]","samples":[{"title":"Direction vectors","code":"directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]\ndirection = (direction + 1) % 4\ndr, dc = directions[direction]"},{"title":"Spiral Matrix boundaries","code":"top, bottom = 0, rows - 1\nleft, right = 0, cols - 1\nwhile top <= bottom and left <= right:\n    # traverse top, right, bottom, left\n    top += 1\n    right -= 1\n    bottom -= 1\n    left += 1"},{"title":"Robot state","code":"row = col = direction = 0\nfor command in commands:\n    if command == 'L':\n        direction = (direction - 1) % 4\n    elif command == 'R':\n        direction = (direction + 1) % 4\n    else:\n        row, col = move(row, col, direction)"},{"title":"Simultaneous state update","code":"next_board = [row[:] for row in board]\nfor row in range(rows):\n    for col in range(cols):\n        neighbors = count_live_neighbors(board, row, col)\n        next_board[row][col] = transition(board[row][col], neighbors)\nboard[:] = next_board"}],"theory":["Liệt kê đầy đủ state và transition trước khi viết loop","Dùng direction vector thay cho nhiều nhánh if lặp lại","Kiểm tra boundary sau mỗi lần co hoặc di chuyển","Dùng copy hoặc encoding khi state phải cập nhật đồng thời"],"practice":["Spiral Matrix #54","Robot Return to Origin #657 hoặc Walking Robot Simulation #874","Game of Life #289","Làm thêm 1 bài simulation tương đương PCCP"],"error":["Ghi lại state hoặc transition từng bị bỏ sót","Tạo test case đổi hướng và chạm boundary liên tiếp"]},{"day":6,"title":"Backtracking","topic":"decision tree · choose · recurse · undo · pruning","recognition":"Cần liệt kê mọi cấu hình hợp lệ từ một chuỗi lựa chọn → dựng decision tree, mutate state rồi undo sau mỗi nhánh.","code":"def backtrack(path, choices):\n    if complete(path):\n        answer.append(path[:])\n        return\n    for choice in choices:\n        path.append(choice)\n        backtrack(path, next_choices(choice))\n        path.pop()","samples":[{"title":"Subsets","code":"answer = []\ndef backtrack(start, path):\n    answer.append(path[:])\n    for index in range(start, len(nums)):\n        path.append(nums[index])\n        backtrack(index + 1, path)\n        path.pop()\nbacktrack(0, [])"},{"title":"Permutations","code":"answer = []\ndef backtrack(path, used):\n    if len(path) == len(nums):\n        answer.append(path[:])\n        return\n    for index, value in enumerate(nums):\n        if index in used:\n            continue\n        used.add(index)\n        path.append(value)\n        backtrack(path, used)\n        path.pop()\n        used.remove(index)"},{"title":"Combination Sum","code":"def backtrack(start, remain, path):\n    if remain == 0:\n        answer.append(path[:])\n        return\n    for index in range(start, len(candidates)):\n        value = candidates[index]\n        if value > remain:\n            break\n        path.append(value)\n        backtrack(index, remain - value, path)\n        path.pop()"},{"title":"Letter Combinations","code":"def backtrack(index, path):\n    if index == len(digits):\n        answer.append(''.join(path))\n        return\n    for char in mapping[digits[index]]:\n        path.append(char)\n        backtrack(index + 1, path)\n        path.pop()"}],"theory":["Vẽ decision tree nhỏ trước khi code","Giữ đúng thứ tự choose → recurse → undo","Phân biệt start index, used set và lựa chọn được phép lặp","Prune khi state hiện tại chắc chắn không thể tạo nghiệm"],"practice":["Subsets #78","Permutations #46","Combination Sum #39","Letter Combinations of a Phone Number #17"],"error":["Ghi lại nhánh bị trùng hoặc bị thiếu và nguyên nhân","Kiểm tra path có được copy trước khi thêm vào answer không"]},{"day":7,"title":"Mixed + Mock PCCP","topic":"pattern selection · timed mock · failure review","recognition":"Đọc constraint và tín hiệu của đề để chọn pattern trong 5 phút đầu; nếu chưa có hướng sau mốc bỏ qua thì chuyển bài.","code":"# Mock checklist\n# 1. Nhận diện pattern\n# 2. Chốt complexity mục tiêu\n# 3. Implement + edge cases\n# 4. Dành thời gian review","samples":[{"title":"Pattern triage","code":"signals = {\n    'grid / shortest steps': 'BFS',\n    'dependency / prerequisite': 'Graph + topo',\n    'top k / priority': 'Heap',\n    'all configurations': 'Backtracking',\n}"},{"title":"Timed solution skeleton","code":"def solution(data):\n    # 0–5m: parse + constraints + pattern\n    # 5–35m: implement\n    # 35–45m: edge cases + complexity\n    return answer"},{"title":"Edge-case table","code":"cases = [\n    ('empty', empty_input, expected_empty),\n    ('single', single_input, expected_single),\n    ('duplicate', duplicate_input, expected_duplicate),\n    ('boundary', boundary_input, expected_boundary),\n]"},{"title":"Post-mock review","code":"review = {\n    'pattern': [],\n    'implementation': [],\n    'edge_case': [],\n    'time_management': [],\n}"}],"theory":["Ôn tín hiệu nhận diện DFS/BFS, graph, heap, greedy và backtracking","Chốt mốc bỏ qua bài để bảo vệ tổng điểm","Dành 10 phút cuối cho edge case và return type","Phân loại mọi lỗi sau mock và lên lịch làm lại"],"practice":["Làm 4–5 bài mixed có giới hạn thời gian","Ít nhất 1 bài graph hoặc grid traversal","Ít nhất 1 bài heap/greedy và 1 bài backtracking","Chữa lại toàn bộ bài sai mà không nhìn lời giải"],"error":["Phân loại lỗi: pattern / implementation / edge case / thời gian","Chọn đúng 2 dạng yếu nhất để ưu tiên trong Week 3"],"mock":true}]$week2_json$::jsonb
+    end as week2,
+    coalesce((
+      select jsonb_object_agg(
+        case when key like 'week-%' then key else 'week-1-' || key end,
+        value
+      )
+      from jsonb_each(coalesce(progress -> 'checked', '{}'::jsonb))
+    ), '{}'::jsonb) as checked,
+    coalesce((
+      select jsonb_object_agg(
+        case when key like 'week-%' then key else 'week-1-day-' || key end,
+        value
+      )
+      from jsonb_each(coalesce(progress -> 'notes', '{}'::jsonb))
+    ), '{}'::jsonb) as notes,
+    coalesce((
+      select jsonb_object_agg(
+        case when key like 'week-%' then key else 'week-1-' || key end,
+        value
+      )
+      from jsonb_each(coalesce(progress -> 'sampleCodes', '{}'::jsonb))
+    ), '{}'::jsonb) as sample_codes,
+    coalesce((
+      select jsonb_agg(
+        case
+          when jsonb_typeof(value) = 'object' and not (value ? 'week')
+            then value || '{"week":1}'::jsonb
+          else value
+        end
+      )
+      from jsonb_array_elements(coalesce(progress -> 'errors', '[]'::jsonb))
+    ), '[]'::jsonb) as errors
+  from source
+)
+update public.pccp_databases as database
+set document = jsonb_set(
+  jsonb_set(
+    jsonb_set(
+      jsonb_set(
+        jsonb_set(
+          jsonb_set(
+            jsonb_set(
+              database.document,
+              '{checklists,week2}', migrated.week2, true
+            ),
+            '{progress,checked}', migrated.checked, true
+          ),
+          '{progress,notes}', migrated.notes, true
+        ),
+        '{progress,sampleCodes}', migrated.sample_codes, true
+      ),
+      '{progress,errors}', migrated.errors, true
+    ),
+    '{progress,week2Mock}',
+    coalesce(database.document #> '{progress,week2Mock}',
+      '{"score":"","solved":"","minutes":"","weak":""}'::jsonb),
+    true
+  ),
+  '{progress,week2OpenDays}',
+  coalesce(database.document #> '{progress,week2OpenDays}', '[1]'::jsonb),
+  true
+)
+from migrated
+where database.id = migrated.id;
+
+alter table public.pccp_databases
+  drop constraint if exists pccp_databases_week2_is_array;
+
+alter table public.pccp_databases
+  add constraint pccp_databases_week2_is_array
+  check (jsonb_typeof(document #> '{checklists,week2}') = 'array');
+
+commit;
+
+-- Verification:
+-- select
+--   jsonb_array_length(document #> '{checklists,week1}') as week1_days,
+--   jsonb_array_length(document #> '{checklists,week2}') as week2_days,
+--   jsonb_object_length(document #> '{progress,checked}') as checked_items,
+--   document #> '{progress,errors}' as error_log
+-- from public.pccp_databases
+-- where id = 'week1';
